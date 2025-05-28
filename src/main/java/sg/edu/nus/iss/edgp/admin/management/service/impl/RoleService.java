@@ -1,15 +1,13 @@
-package sg.edu.nus.iss.edgp.admin.management.configuration.service.impl;
+package sg.edu.nus.iss.edgp.admin.management.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
@@ -17,17 +15,15 @@ import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IRoleService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
+import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
 @Service
 public class RoleService implements IRoleService {
 
 	private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
 
+	@Autowired
 	private RoleRepository roleRepository;
-
-	public RoleService(RoleRepository roleRepository) {
-		this.roleRepository = roleRepository;
-	}
 
 	@Override
 	public RoleDTO createRole(Role role) {
@@ -45,25 +41,23 @@ public class RoleService implements IRoleService {
 
 		}
 	}
-	
-	@Override
-	public Map<Long, List<RoleDTO>> findStatusTrue( Pageable pageable) {
-		try {
-			
-			Page<Role> rolePages =  roleRepository.findStatusTrue(pageable);
-			long totalRecord = rolePages.getTotalElements();
-			List<RoleDTO> roleDTOList = new ArrayList<>();
-			if (totalRecord > 0) {
 
-				for (Role role : rolePages.getContent()) {
-					RoleDTO roleDTO = DTOMapper.toRoleDTO(role);
-					roleDTOList.add(roleDTO);
-				}
+	@Override
+	public List<RoleDTO> findByStatusTrue() {
+		try {
+
+			List<Role> roles = roleRepository.findByStatusTrue();
+
+			List<RoleDTO> roleDTOList = new ArrayList<>();
+
+			for (Role role : roles) {
+				RoleDTO roleDTO = DTOMapper.toRoleDTO(role);
+				roleDTOList.add(roleDTO);
 			}
-			logger.info("Total record in findStatusTrue " + totalRecord);
-			Map<Long, List<RoleDTO>> result = new HashMap<>();
-			result.put(totalRecord, roleDTOList);
-			return result;
+
+			logger.info("Total record in findStatusTrue " + roles.size());
+
+			return roleDTOList;
 
 		} catch (Exception ex) {
 			logger.error("findStatusTrue exception... {}", ex.toString());
@@ -81,6 +75,29 @@ public class RoleService implements IRoleService {
 		} catch (Exception ex) {
 			logger.error("findByRoleName exception... {}", ex.toString());
 		}
+		return roleDTO;
+	}
+
+	@Override
+	public RoleDTO updateRole(Role role) {
+		RoleDTO roleDTO = new RoleDTO();
+		try {
+			Optional<Role> dbRole = roleRepository.findById(role.getRoleId());
+			dbRole.get().setRoleName(GeneralUtility.makeNotNull(role.getRoleName()));
+			dbRole.get().setRoleDescription(GeneralUtility.makeNotNull(role.getRoleDescription()));
+			dbRole.get().setStatus(role.isStatus());
+			dbRole.get().setUpdatedBy(role.getUpdatedBy());
+			dbRole.get().setUpdatedDate(LocalDateTime.now());
+			logger.info("Update role...");
+			Role savedRole = roleRepository.save(dbRole.get());
+			logger.info("Updated successfully...");
+			roleDTO = DTOMapper.toRoleDTO(savedRole);
+
+		} catch (Exception ex) {
+			logger.error("Role updating exception... {}", ex.toString());
+
+		}
+
 		return roleDTO;
 	}
 

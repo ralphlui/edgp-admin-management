@@ -9,20 +9,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
 
+import lombok.AllArgsConstructor;
+import sg.edu.nus.iss.edgp.admin.management.aws.service.SQSPublishingService;
+import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
+import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
+import sg.edu.nus.iss.edgp.admin.management.enums.AuditResponseStatus;
+import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
+import sg.edu.nus.iss.edgp.admin.management.service.IAuditService;
 
+@AllArgsConstructor
 @Service
 public class AuditService implements IAuditService {
 
 	private static final Logger logger = LoggerFactory.getLogger(AuditService.class);
-
-	@Autowired
-	AuthAPICall apiCall;
 	
-	@Autowired
-	private SQSPublishingService sqsPublishingService;
+	private final SQSPublishingService sqsPublishingService;
 	
-	@Autowired
-	private JWTService jwtService;
+	private final JWTService jwtService;
 
 	@Override
 	public void sendMessage(AuditDTO autAuditDTO, String authorizationHeader) {
@@ -75,3 +79,5 @@ public class AuditService implements IAuditService {
 
 
 }
+
+

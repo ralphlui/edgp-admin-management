@@ -3,17 +3,18 @@ package sg.edu.nus.iss.edgp.admin.management.strategy.impl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import sg.edu.nus.iss.edgp.admin.management.configuration.service.impl.RoleService;
+import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
-
+@AllArgsConstructor
 @Service
-@RequiredArgsConstructor
 public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Role>{
 
 	private final RoleService roleService;

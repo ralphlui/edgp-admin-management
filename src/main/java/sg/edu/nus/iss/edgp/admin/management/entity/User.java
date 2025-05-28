@@ -67,7 +67,6 @@ public class User {
 
 	@Column(nullable = true, columnDefinition = "datetime")
 	private LocalDateTime lastLoginDate;
-
 	
 	@Column(nullable = false, columnDefinition = "varchar(255) default ''")
     private String verificationCode;

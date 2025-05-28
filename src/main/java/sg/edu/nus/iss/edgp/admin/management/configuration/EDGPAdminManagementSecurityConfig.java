@@ -20,7 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 @Configuration
 @EnableWebSecurity
 public class EDGPAdminManagementSecurityConfig {
-	private static final String[] SECURED_URLs = { "/api/users/**" };
+	private static final String[] SECURED_URLs = { "/api/admin/**" };
 
 	@Value("${allowed.origin}")
 	private String allowedOrigin;

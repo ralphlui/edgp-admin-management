@@ -8,8 +8,8 @@ public class DTOMapper {
 	public static RoleDTO toRoleDTO(Role role) {
 		RoleDTO roleDTO = new RoleDTO();
 		roleDTO.setRoleId(role.getRoleId());
-		roleDTO.setRolename(role.getRolename());
-		roleDTO.setRoledescription(role.getRoledescription());
+		roleDTO.setRoleName(role.getRoleName());
+		roleDTO.setRoleDescription(role.getRoleDescription());
 		return roleDTO;
 		
 	}
