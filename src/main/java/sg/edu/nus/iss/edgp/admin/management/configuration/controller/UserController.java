@@ -9,12 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +31,7 @@ import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.UserValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 
 @RequiredArgsConstructor
@@ -84,6 +88,43 @@ public class UserController {
 					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
 		}
 
+	}
+	
+	@PutMapping(value = "", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> updateUser(@RequestHeader("Authorization") String authorizationHeader,
+			@RequestBody UserRequest userRequest) {
+		logger.info("Call user update API...");
+		String message;
+		String activityType = "Authentication-UpdateUser";
+		String apiEndPoint = String.format(API_ENDPOINT);
+		HTTPVerb httpMethod = HTTPVerb.PUT;
+		String activityDesc = "Update User failed due to ";
+		String loginUserId = INVALID_USER_ID;	
+		
+		try {
+			String userID = userRequest.getUserId();
+		    loginUserId = jwtService.retrieveUserID(authorizationHeader);
+			ValidationResult validationResult = userValidationStrategy.validateUpdating(userRequest,authorizationHeader);
+
+			if (validationResult.isValid()) {
+
+				userRequest.setUserId(userID);
+				UserDTO userDTO = userService.updateUser(userRequest);
+				message = "User updated successfully.";
+				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(loginUserId, activityType, apiEndPoint,
+						httpMethod, message, userDTO, authorizationHeader);
+
+			} else {
+				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(loginUserId, activityType, apiEndPoint,
+						httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
+						authorizationHeader);
+			}
+		} catch (Exception ex) {
+			
+			message = "An error has occurred while processing the create Role API request.";
+			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(loginUserId, activityType, apiEndPoint, httpMethod,
+					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
+		}
 	}
 	
 	@GetMapping(value = "", produces = "application/json")
