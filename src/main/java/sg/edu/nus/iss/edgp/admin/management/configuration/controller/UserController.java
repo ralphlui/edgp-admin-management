@@ -96,12 +96,10 @@ public class UserController {
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		String activityDesc = "Retreving active user list is failed due to ";
 		String userId = INVALID_USER_ID;
-		HashMap<String,String> userInfo = new HashMap<String, String>();
-		
 		
 		try {
 			
-			userInfo = userService.retrieveUserIDAndNameFromToken(authorizationHeader);
+			userId = jwtService.retrieveUserID(authorizationHeader);
 			Pageable pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize(), Sort.by("username").ascending());
 			Map<Long, List<UserDTO>> resultMap = userService.findActiveUsers(pageable);
 			logger.info("all active user list size {}", resultMap.size());
