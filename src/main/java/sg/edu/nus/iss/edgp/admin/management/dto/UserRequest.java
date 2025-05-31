@@ -1,0 +1,22 @@
+package sg.edu.nus.iss.edgp.admin.management.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class UserRequest {
+
+	private String email;
+	private String userId;
+	private String username;
+	private String password;
+	private Boolean active;
+	private Role role;
+	private String accountVerificationCode; 
+    private String otp;
+	
+}

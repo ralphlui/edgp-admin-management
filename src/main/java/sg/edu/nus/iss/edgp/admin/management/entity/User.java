@@ -23,13 +23,13 @@ public class User {
 		super();
 	}
 
-	public User(String email, String username, String password, Role role, UserStatus status) {
+	public User(String email, String username, String password, Role role, boolean isActive) {
 		super();
 		this.email = email;
 		this.username = username;
 		this.password = password;
 		this.role = role;
-		this.status = status;
+		this.isActive = isActive;
 	}
 
 	@Id
@@ -61,9 +61,8 @@ public class User {
 	@Column(nullable = true)
 	private String updatedBy;
 
-	@ManyToOne(cascade = CascadeType.ALL)
-	@JoinColumn(name = "statusId")
-	private UserStatus status;
+	@Column(nullable = false, columnDefinition = "boolean default true")
+	private boolean isActive;
 
 	@Column(nullable = true, columnDefinition = "datetime")
 	private LocalDateTime lastLoginDate;

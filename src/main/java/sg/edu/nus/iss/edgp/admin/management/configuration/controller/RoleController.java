@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.AllArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.APIResponse;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
@@ -32,9 +32,8 @@ import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 @Validated
 public class RoleController {
 
-	private static final Logger logger = LoggerFactory.getLogger(RoleController.class);
-
-	private static final String INVALID_USER_ID = "Invalid UserID";
+	private static final Logger logger = LoggerFactory.getLogger(RoleController.class);	 
+	private static final String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();	
 	private static final String API_ADMIN_ROLES_ENDPOINT = "/api/admin/roles";
 	
 	@Autowired

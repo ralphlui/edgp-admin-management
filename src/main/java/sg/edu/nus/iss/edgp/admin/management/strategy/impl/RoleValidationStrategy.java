@@ -78,8 +78,9 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 		return null;
 	}
 
+	
 	@Override
-	public ValidationResult validateObject(String data, String header) {
+	public ValidationResult validateObjectByUserId(Role userId, boolean requiresPasswordValidation) {
 		// TODO Auto-generated method stub
 		return null;
 	}
