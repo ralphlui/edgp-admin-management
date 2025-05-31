@@ -2,7 +2,6 @@ package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.*; 
-import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
@@ -53,7 +51,7 @@ public class UserController {
 		HTTPVerb httpMethod = HTTPVerb.POST;
 		String userid = INVALID_USER_ID;	
 		try {
-			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest);
+			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,authorizationHeader);
 			
 			userid = validationResult.getUserId();
 			if (validationResult.isValid()) {

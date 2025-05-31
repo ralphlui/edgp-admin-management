@@ -24,7 +24,7 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
 	
 	@Override
-	public ValidationResult validateCreation(UserRequest userReq) {
+	public ValidationResult validateCreation(UserRequest userReq,String header) {
 		ValidationResult validationResult = new ValidationResult();
 
 		if (userReq.getEmail() == null || userReq.getEmail().isEmpty()) {

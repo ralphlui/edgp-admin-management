@@ -5,7 +5,7 @@ import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 
 public interface IAPIHelperValidationStrategy<T> {
 	
-	ValidationResult validateCreation(T data);
+	ValidationResult validateCreation(T data,String header);
 	
 	ValidationResult validateUpdating(T data, String header);
 

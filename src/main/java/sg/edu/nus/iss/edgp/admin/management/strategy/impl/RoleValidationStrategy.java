@@ -85,4 +85,10 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 		return null;
 	}
 
+	@Override
+	public ValidationResult validateObject(String data, String header) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
