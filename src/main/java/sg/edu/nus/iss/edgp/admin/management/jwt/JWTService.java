@@ -12,6 +12,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.AllArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
+import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -29,6 +30,7 @@ public class JWTService {
 	private final JWTConfig jwtConfig;
 
 	public static final String USER_EMAIL = "userEmail";
+	public static final String CLAIM_USERNAME = "userName";
 
 	public PublicKey loadPublicKey() throws Exception {
 		byte[] keyBytes = Base64.getDecoder().decode(jwtConfig.getJWTPubliceKey());
@@ -122,6 +124,28 @@ public class JWTService {
 			return e.getClaims().get(USER_EMAIL, String.class);
 		} catch (Exception e) {
 			return "Invalid userEmail";
+		}
+	}
+	
+	public String extractUserIdAllowExpiredToken(String token) throws JwtException, IllegalArgumentException, Exception {
+		try {
+			return extractClaim(token, Claims::getSubject);
+		} catch (ExpiredJwtException e) {
+			return e.getClaims().getSubject();
+		} catch (Exception e) {
+			return AuditLogInvalidUser.INVALID_USER_ID.toString();
+		}
+	}
+	
+	public String extractUserNameAllowExpiredToken(String token) throws JwtException, IllegalArgumentException, Exception {
+		try {
+			Claims claims = extractAllClaims(token);
+			String userName = claims.get(CLAIM_USERNAME, String.class);
+			return userName;
+		} catch (ExpiredJwtException e) {
+			return e.getClaims().get(CLAIM_USERNAME, String.class);
+		} catch (Exception e) {
+			return AuditLogInvalidUser.INVALID_USER_NAME.toString();
 		}
 	}
 

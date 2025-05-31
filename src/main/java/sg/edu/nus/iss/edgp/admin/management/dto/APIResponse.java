@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.AuditService;
 
 @Data
@@ -24,6 +26,11 @@ public class APIResponse<T> {
 	private T data;
 
 	private AuditService auditService;
+	
+	private String auditLogResponseSuccess = AuditLogResponseStatus.SUCCESS.toString();
+	private String auditLogResponseFailure = AuditLogResponseStatus.FAILED.toString();
+	private String genericErrorMessage = "An error occurred while processing your request. Please try again later.";
+	
 	
 	@Value("${audit.activity.type.prefix}")
 	String activityTypePrefix;
@@ -101,5 +108,4 @@ public class APIResponse<T> {
 		return ResponseEntity.status(httpStatusCode).body(APIResponse.noList(storeDTOList, message));
 
 	}
-
 }

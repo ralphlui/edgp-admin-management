@@ -95,10 +95,10 @@ public class RoleController {
 		String endpoint = API_ADMIN_ROLES_ENDPOINT + "/update";
 		HTTPVerb httpMethod = HTTPVerb.PUT;
 		String message = "";
-		String userid = INVALID_USER_ID;
+		String userId = INVALID_USER_ID;
 
 		try {
-
+			userId = jwtService.retrieveUserID(authorizationHeader);
 			String roleId = GeneralUtility.makeNotNull(role.getRoleId()).trim();
 
 			if (!roleId.equals("")) {
@@ -109,7 +109,7 @@ public class RoleController {
 					RoleDTO roleDTO = roleService.updateRole(role);
 					if (roleDTO != null && !roleDTO.getRoleId().isEmpty()) {
 						message = roleDTO.getRoleName() + " is updated successfully.";
-						return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userid, activityType, endpoint,
+						return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userId, activityType, endpoint,
 								httpMethod, message, roleDTO, authorizationHeader);
 
 					} else {
@@ -118,12 +118,12 @@ public class RoleController {
 								+ role.getRoleName();
 						logger.error("Calling Role update API failed...");
 
-						return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
+						return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
 								httpMethod, message, HttpStatus.INTERNAL_SERVER_ERROR, "", authorizationHeader);
 					}
 
 				} else {
-					return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
+					return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
 							httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
 							authorizationHeader);
 				}
@@ -131,7 +131,7 @@ public class RoleController {
 				message = "Bad Request:Campaign ID could not be blank.";
 				logger.error(message);
 
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
+				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
 						httpMethod, message, HttpStatus.BAD_REQUEST, "", authorizationHeader);
 			}
 
@@ -140,7 +140,7 @@ public class RoleController {
 
 			logger.info(message);
 
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint, httpMethod,
+			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint, httpMethod,
 					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
 		}
 	}
@@ -171,7 +171,7 @@ public class RoleController {
 			}
 
 		} catch (Exception e) {
-			message = "The attempt to retrieve active store list was unsuccessful.";
+			message = "The attempt to retrieve active role list was unsuccessful.";
 			return apiResponse.handleResponseListAndSendAuditLogForFailuresCase(userId, activityType,
 					API_ADMIN_ROLES_ENDPOINT, httpMethod, message, HttpStatus.INTERNAL_SERVER_ERROR, e.toString(),
 					authorizationHeader);
