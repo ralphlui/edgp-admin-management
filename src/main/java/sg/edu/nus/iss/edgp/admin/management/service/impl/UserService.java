@@ -230,5 +230,23 @@ public class UserService implements IUserService{
 		}
 	}
 
+	@Override
+	public UserDTO checkSpecificActiveUser(String userId) {
+		try {
+			User user = findByUserIdAndStatus(userId, true, true);
+			if (user == null) {
+				logger.error("Active user is not found.");
+				throw new UserNotFoundException("This user is not an active user");
+			}
+			logger.info("Active user is found.");
+			return DTOMapper.toUserDTO(user);
+			
+		} catch (Exception e) {
+			logger.error("Error occurred while checking specific active User, " + e.toString());
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
 
 }

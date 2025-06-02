@@ -1,15 +1,16 @@
 package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import sg.edu.nus.iss.edgp.admin.management.dto.*; 
+import sg.edu.nus.iss.edgp.admin.management.dto.*;
+import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
-import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.UserValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.CookieUtils;
@@ -253,6 +254,48 @@ public class UserController {
 					message, htpStatuscode, ex.toString(), "");
 		}
 	}
+	
+	@PostMapping(value = "/active", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> checkSpecificActiveUser(
+			@RequestHeader("Authorization") String authorizationHeader,@RequestHeader("X-User-Id") String userID) {
+		logger.info("Call user active API...");
+		String message = "";
+		String activityType = "Authentication-RetrieveActiveUserByUserId";
+		String apiEndPoint = String.format("api/users/active");
+		HTTPVerb httpMethod = HTTPVerb.GET;
+		String activityDesc = "Retrieving active user by id failed due to ";
+		
+		HashMap<String,String> userInfo = new HashMap<String, String>();
+		
+		try {
+			userInfo = userService.retrieveUserIDAndNameFromToken(authorizationHeader);
+			User user  = userService.findActiveUserByID(userID);
+
+			if (user == null) {
+				message ="Active User not foud.";
+				logger.error("Active User not foud.");
+				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint,
+						httpMethod, "", HttpStatus.NOT_FOUND, "",
+						authorizationHeader); 
+
+			}
+
+			UserDTO userDTO = userService.checkSpecificActiveUser(userID);
+			message = userDTO.getEmail() + " is Active";
+			 
+			return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint,
+					httpMethod, message, userDTO, "",null);
+		
+
+		} catch (Exception ex) {
+			// To Do
+			HttpStatusCode htpStatuscode = ex instanceof UserNotFoundException ? HttpStatus.NOT_FOUND
+					: HttpStatus.INTERNAL_SERVER_ERROR;
+			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint, httpMethod,
+					message, htpStatuscode, ex.toString(), "");
+		}
+	}
+	
 
 
 }

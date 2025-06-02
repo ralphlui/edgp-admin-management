@@ -13,6 +13,6 @@ public interface IAPIHelperValidationStrategy<T> {
 	
 	ValidationResult validateObject(String data, String header);
 	
-	ValidationResult validateObjectByUserId(T userId,boolean requiresPasswordValidation);
+	ValidationResult validateObjectByUserId(T data,boolean requiresPasswordValidation);
 
 }

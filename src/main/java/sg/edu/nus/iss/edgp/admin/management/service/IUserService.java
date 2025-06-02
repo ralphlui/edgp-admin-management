@@ -26,6 +26,8 @@ public interface IUserService {
 	 Map<Long, List<UserDTO>> findActiveUsers(Pageable pageable);
 	 
      UserDTO loginUser(String email, String password);
+     
+     UserDTO checkSpecificActiveUser(String userId);
 	 
 	
 }

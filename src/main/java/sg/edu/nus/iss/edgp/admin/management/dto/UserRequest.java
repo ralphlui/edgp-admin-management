@@ -2,12 +2,14 @@ package sg.edu.nus.iss.edgp.admin.management.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class UserRequest {
 
 	private String email;
