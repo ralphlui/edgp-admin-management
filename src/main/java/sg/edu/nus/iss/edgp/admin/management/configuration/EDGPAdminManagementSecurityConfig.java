@@ -13,9 +13,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.HstsHeaderWriter;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
+
+import sg.edu.nus.iss.edgp.admin.management.jwt.JwtFilter;
+
 
 @Configuration
 @EnableWebSecurity
@@ -31,7 +35,7 @@ public class EDGPAdminManagementSecurityConfig {
 	}
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
 		return http.cors(cors -> {
 			cors.configurationSource(request -> {
 				CorsConfiguration config = new CorsConfiguration();
@@ -45,21 +49,19 @@ public class EDGPAdminManagementSecurityConfig {
 				.addHeaderWriter(
 						new StaticHeadersWriter("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS"))
 				.addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Headers", "*"))
-				.addHeaderWriter(new HstsHeaderWriter(31536000, false, true))
-				.addHeaderWriter(
+				.addHeaderWriter(new HstsHeaderWriter(31536000, false, true)).addHeaderWriter(
 						(request, response) -> response.addHeader("Cache-Control", "max-age=60, must-revalidate"))
-				.addHeaderWriter(new StaticHeadersWriter("Content-Security-Policy",
-						"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';")))
-				// CSRF protection is disabled because JWT Bearer tokens are used for stateless
-				// authentication.
+			     .addHeaderWriter(new StaticHeadersWriter("Content-Security-Policy",
+			                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"))
+			        )
+				// CSRF protection is disabled because JWT Bearer tokens are used for stateless authentication.
 				.csrf(csrf -> csrf.disable()) // NOSONAR - CSRF is not required for JWT-based stateless authentication
 				.authorizeHttpRequests(
 						auth -> auth.requestMatchers(SECURED_URLs).permitAll().anyRequest().authenticated())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).build();// To
-																														// add
-																														// JWTFilter
-																														// Later
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class).build();
 	}
+	
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {

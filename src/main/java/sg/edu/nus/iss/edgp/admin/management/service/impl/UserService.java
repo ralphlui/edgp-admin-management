@@ -26,6 +26,7 @@ import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
+import sg.edu.nus.iss.edgp.admin.management.utility.EncryptionUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ public class UserService implements IUserService{
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
+	private final EncryptionUtils encryptionUtils;
 	
 	private static final String ACTIVE_USER_NOT_FOUND_MSG = "Active user is not found.";
 	private static final String ACTIVE_USER_FOUND_MSG = "Active user is found.";
@@ -128,7 +130,7 @@ public class UserService implements IUserService{
 	
 	public User findByUserIdAndStatus(String userId, boolean isActive, boolean isVerified) {
 
-		return userRepository.findByUserIdAndStatus_ActiveAndStatus_Verified(userId, isActive, isVerified);
+		return userRepository.findByUserIdAndIsActiveAndIsVerified(userId, isActive, isVerified);
 	}
 	
 
@@ -164,7 +166,7 @@ public class UserService implements IUserService{
 		Map<Long, List<UserDTO>> result = new HashMap<>();
 		List<UserDTO> userDTOList = new ArrayList<>();
 		try {
-			Page<User> userPages = userRepository.findByStatus_ActiveAndStatus_Verified(true, true, pageable);
+			Page<User> userPages = userRepository.findByIsActiveAndIsVerified(true, true, pageable);
 			long totalRecord = userPages.getTotalElements();
 			if (totalRecord > 0) {
 				logger.info("Active user list is found.");
@@ -180,6 +182,51 @@ public class UserService implements IUserService{
 			logger.error("findByIsActiveTrue exception...", ex);
 			throw ex;
 
+		}
+	}
+
+	@Override
+	public UserDTO verifyUser(String verificationCode) {
+		try {
+		String decodedVerificationCode = encryptionUtils.decrypt(verificationCode);
+		User user = userRepository.findByVerificationCodeAndIsActiveAndIsVerified(decodedVerificationCode, false, true);
+		if (user == null) {
+			logger.error("Vefriy user failed: Verfiy Id is invalid or already verified.");
+			throw new UserNotFoundException("Vefriy user failed: Verfiy Id is invalid or already verified.");
+		}
+		user.setVerified(true);
+		user.setUpdatedDate(LocalDateTime.now());
+		User verifiedUser = userRepository.save(user);
+		UserDTO userDTO = DTOMapper.toUserDTO(verifiedUser);
+		
+		if (userDTO == null) {
+			logger.error("Vefriy user failed: Verfiy Id is invalid or already verified.");
+			throw new UserNotFoundException("Vefriy user failed: Verify Id is invalid or already verified.");
+		}
+		logger.info("User verification is successful.");
+		return userDTO;
+		
+		} catch (Exception e) {
+			logger.error("Error occurred while validating user login", e);
+			 
+		}
+		return null;
+	}
+
+	@Override
+	public UserDTO loginUser(String email, String password) {
+		try {
+			User user = userRepository.findByEmailAndIsActiveAndIsVerified(email, true, true);
+			if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+				logger.info("User login is successful.");
+				return DTOMapper.toUserDTO(user);
+			}
+			logger.error("User login is not successful.");
+			throw new UserNotFoundException("Invalid Credentials");
+		} catch (Exception e) {
+			logger.error("Error occurred while validating user login", e);
+			 
+			throw e;
 		}
 	}
 

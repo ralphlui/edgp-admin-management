@@ -22,6 +22,9 @@ public class AWSConfig {
 	@Value("${spring.cloud.aws.credentials.secret-key}")
 	private String awsSecretKey;
 	
+	@Value("${aws.sqs.queue.audit.url}")
+	private String sqsURL;
+	
 	@Bean
 	public String getAwsRegion() {
 		return awsRegion;
@@ -35,6 +38,11 @@ public class AWSConfig {
 	@Bean
 	public String getAwsSecretKey() {
 		return awsSecretKey;
+	}
+	
+	@Bean
+	public String getSQSUrl() {
+		return sqsURL;
 	}
 	
 	

@@ -66,7 +66,7 @@ public class RoleController {
 				RoleDTO roleDTO = roleService.createRole(role);
 				message = roleDTO.getRoleName() + " is created successfully.";
 				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userid, activityType, endpoint,
-						httpMethod, message, roleDTO, authorizationHeader);
+						httpMethod, message, roleDTO, authorizationHeader,null);
 
 			} else {
 				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
@@ -110,7 +110,7 @@ public class RoleController {
 					if (roleDTO != null && !roleDTO.getRoleId().isEmpty()) {
 						message = roleDTO.getRoleName() + " is updated successfully.";
 						return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userId, activityType, endpoint,
-								httpMethod, message, roleDTO, authorizationHeader);
+								httpMethod, message, roleDTO, authorizationHeader,null);
 
 					} else {
 
@@ -163,7 +163,7 @@ public class RoleController {
 			if (!roles.isEmpty()) {
 				message = "Successfully retrieved all active roles.";
 				return apiResponse.handleResponseListAndSendAuditLogForSuccessCase(userId, activityType,
-						API_ADMIN_ROLES_ENDPOINT, httpMethod, message, roles, roles.size(), authorizationHeader);
+						API_ADMIN_ROLES_ENDPOINT, httpMethod, message, roles, roles.size(), authorizationHeader,null);
 			} else {
 				message = "No Active Role List.";
 				return apiResponse.handleEmptyResponseListAndSendAuditLogForSuccessCase(userId, activityType,

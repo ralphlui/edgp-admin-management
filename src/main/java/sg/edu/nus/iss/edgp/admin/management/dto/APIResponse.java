@@ -3,6 +3,7 @@ package sg.edu.nus.iss.edgp.admin.management.dto;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,6 @@ import lombok.Builder;
 import lombok.Data;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
-import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.AuditService;
 
 @Data
@@ -62,11 +62,17 @@ public class APIResponse<T> {
 
 	public ResponseEntity<APIResponse<T>> handleResponseAndSendAudtiLogForSuccessCase(String userId,
 			String activityType, String endpoint, HTTPVerb httpVerb, String message, T t,
-			String authorizationHeader) {
+			String authorizationHeader,HttpHeaders headers) {
 		AuditDTO auditDTO = auditService.createAuditDTO(userId, activityType, activityTypePrefix, endpoint, httpVerb);
+		
 		auditService.logAudit(auditDTO, HttpStatus.OK.value(), message, authorizationHeader);
+		if(headers == null || headers.isEmpty()) {
 		return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(t, message));
+		}else {
+			return ResponseEntity.status(HttpStatus.OK).headers(headers).body(APIResponse.success(t, message));	
+		}
 	}
+		
 
 	public ResponseEntity<APIResponse<T>> handleResponseAndSendAudtiLogForFailureCase(String userId,
 			String activityType, String endpoint, HTTPVerb httpVerb, String message, HttpStatusCode htpStatuscode,
@@ -91,11 +97,15 @@ public class APIResponse<T> {
 	
 	public ResponseEntity<APIResponse<List<T>>> handleResponseListAndSendAuditLogForSuccessCase(String userId,
 			String activityType, String endpoint, HTTPVerb httpVerb, String message, List<T> dtoList,
-			long totalRecord, String authorizationHeader) {
+			long totalRecord, String authorizationHeader,HttpHeaders headers) {
 		int httpStatusCode = HttpStatus.OK.value();
 		AuditDTO auditDTO = auditService.createAuditDTO(userId, activityType, activityTypePrefix, endpoint, httpVerb);
 		auditService.logAudit(auditDTO, httpStatusCode, message, authorizationHeader);
+		if(headers == null || headers.isEmpty()) {
 		return ResponseEntity.status(httpStatusCode).body(APIResponse.success(dtoList, message, totalRecord));
+		}else {
+			return ResponseEntity.status(httpStatusCode).headers(headers).body(APIResponse.success(dtoList, message, totalRecord));	
+		}
 
 	}
 	
@@ -108,4 +118,7 @@ public class APIResponse<T> {
 		return ResponseEntity.status(httpStatusCode).body(APIResponse.noList(storeDTOList, message));
 
 	}
+	 
+	 
+
 }

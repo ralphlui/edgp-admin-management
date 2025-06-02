@@ -16,10 +16,14 @@ public interface UserRepository extends JpaRepository<User, String>  {
 	
 	User findByUserId(String userId);
 	
-	Page<User> findByStatus_ActiveTrue(Pageable pageable);
+	Page<User> findByIsActiveTrue(Pageable pageable);
 
-	User findByUserIdAndStatus_ActiveAndStatus_Verified(String userId, boolean active, boolean verified);
+	User findByUserIdAndIsActiveAndIsVerified(String userId, boolean active, boolean verified);
 	
-	Page<User> findByStatus_ActiveAndStatus_Verified(boolean active, boolean verified, Pageable pageable);
+	User findByEmailAndIsActiveAndIsVerified(String email, boolean active, boolean verified);
+	
+	User findByVerificationCodeAndIsActiveAndIsVerified(String verificationCode, boolean active, boolean verified);
+	
+	Page<User> findByIsActiveAndIsVerified(boolean active, boolean verified, Pageable pageable);
 
 }

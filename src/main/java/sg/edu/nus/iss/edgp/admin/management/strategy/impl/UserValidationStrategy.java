@@ -1,5 +1,6 @@
 package sg.edu.nus.iss.edgp.admin.management.strategy.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -13,12 +14,15 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.PasswordValidatorServic
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 
-@AllArgsConstructor
+
 @Service
 public class UserValidationStrategy implements IAPIHelperValidationStrategy <UserRequest>{
 
-	private final UserService userService;
-	private final PasswordValidatorService passwordValidatorService;
+	@Autowired
+	UserService userService;
+	
+	@Autowired
+	PasswordValidatorService passwordValidatorService;
 
 	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();

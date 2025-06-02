@@ -15,6 +15,8 @@ public interface IUserService {
 	 
 	 UserDTO updateUser (UserRequest user);
 	 
+	 UserDTO verifyUser(String verificationCode);
+	 
 	 User findByEmail(String email);
 	 
 	 User findActiveUserByID(String userId);
@@ -22,4 +24,8 @@ public interface IUserService {
 	 User findByUserId(String userId);
 	 
 	 Map<Long, List<UserDTO>> findActiveUsers(Pageable pageable);
+	 
+     UserDTO loginUser(String email, String password);
+	 
+	
 }
