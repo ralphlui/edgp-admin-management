@@ -15,6 +15,8 @@ public interface IUserService {
 	 
 	 UserDTO updateUser (UserRequest user);
 	 
+	 UserDTO accountActivate (UserRequest user);
+	 
 	 UserDTO verifyUser(String verificationCode);
 	 
 	 User findByEmail(String email);

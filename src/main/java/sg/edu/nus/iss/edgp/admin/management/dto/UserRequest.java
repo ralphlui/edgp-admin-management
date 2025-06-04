@@ -20,5 +20,6 @@ public class UserRequest {
 	private String role;
 	private String accountVerificationCode; 
     private String otp;
+    private String userInvitationtoken;
 	
 }

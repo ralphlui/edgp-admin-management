@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -21,10 +22,12 @@ import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
+import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
+import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
@@ -38,6 +41,7 @@ public class UserService implements IUserService{
 
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
+	private final UserInvitationRepository userInvitationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
 	private final EncryptionUtils encryptionUtils;
@@ -270,6 +274,42 @@ public class UserService implements IUserService{
 			e.printStackTrace();
 			throw e;
 		}
+	}
+
+	@Override
+	public UserDTO accountActivate(UserRequest userReq) {
+		try {
+			Optional<UserInvitation> userInvitation = userInvitationRepository.findByToken(userReq.getUserInvitationtoken());
+			if(userInvitation.isPresent()) {
+				User user = new  User();
+				user.setUsername(userReq.getUsername());
+				user.setPassword(userReq.getPassword());
+				user.setEmail(userInvitation.get().getEmail());
+				user.setActive(true);
+				user.setVerified(true);
+				Role role = roleRepository.findByRoleName(userInvitation.get().getRoleName());
+				user.setRole(role);
+				
+				user.setCreatedDate(LocalDateTime.now());
+				 
+				logger.info("Create User...");
+				User createdUser = userRepository.save(user);
+				 
+				if (createdUser == null) {
+					throw new Exception("User registration is not successful");
+				}
+				logger.info("User registration is successful.");
+				
+
+				return DTOMapper.toUserDTO(createdUser);
+			}
+		}
+			catch (Exception e) {
+				logger.error("Error occurred while updating password, " + e.toString());
+				e.printStackTrace();
+				
+			}
+		return null;
 	}
 
 
