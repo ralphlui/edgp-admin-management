@@ -9,4 +9,6 @@ public interface IUserInvitationService {
 	
 	String generateSecureToken() ;
 	
+	boolean existsByEmailIsUsed(String email);
+	
 }

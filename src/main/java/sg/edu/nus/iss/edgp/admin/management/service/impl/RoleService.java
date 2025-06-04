@@ -30,6 +30,7 @@ public class RoleService implements IRoleService {
 		try {
 			role.setCreatedDate(LocalDateTime.now());
 			logger.info("Saving Role...");
+			role.setStatus(true);
 			Role createdRole = roleRepository.save(role);
 			logger.info("Saved successfully...{}", createdRole.getRoleId());
 			RoleDTO roleDTO = DTOMapper.toRoleDTO(createdRole);

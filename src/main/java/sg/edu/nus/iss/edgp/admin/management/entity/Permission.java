@@ -21,6 +21,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Permission {
 	
+	public Permission() {
+		super();
+	}
+	
 	@Id
 	@UuidGenerator(style = UuidGenerator.Style.AUTO)
 	private String permissionId;

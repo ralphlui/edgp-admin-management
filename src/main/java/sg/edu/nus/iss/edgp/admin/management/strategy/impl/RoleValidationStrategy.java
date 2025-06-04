@@ -7,9 +7,12 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
@@ -18,6 +21,7 @@ import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Role>{
 
 	private final RoleService roleService;
+	private final UserService userService;
 	
 	@Override
 	public ValidationResult validateCreation(Role role, String authorizationHeader) {
@@ -25,16 +29,21 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 		String userId = GeneralUtility.makeNotNull(role.getCreatedBy());
 
 		if (userId.isEmpty()) {
-			validationResult.setMessage("Bad Request: User id field could not be blank.");
+			validationResult.setMessage("Bad Request: CreatedBy field could not be blank.");
 			validationResult.setValid(false);
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);
 			return validationResult;
+		}else {
+			User user = userService.findActiveUserByID(userId);
+			if(user == null) {
+				validationResult.setMessage("Bad Request: CreatedBy is not valid.");
+				validationResult.setValid(false);
+				validationResult.setStatus(HttpStatus.BAD_REQUEST);
+				return validationResult;
+			}
 		}
 
-		ValidationResult validationObjResult = validateObject(userId);
-		if (!validationObjResult.isValid()) {
-			return validationObjResult;
-		}
+		 
 
 		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
 			validationResult.setMessage("Bad Request: Role name could not be blank.");
@@ -47,7 +56,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 		RoleDTO roleDTO = roleService.findByRoleName(role.getRoleName());
 		try {
 			if (GeneralUtility.makeNotNull(roleDTO.getRoleName().toLowerCase()).equals(role.getRoleName().toLowerCase())) {
-				validationResult.setMessage("Store already exists.");
+				validationResult.setMessage("Role already exists.");
 				validationResult.setStatus(HttpStatus.BAD_REQUEST);
 				validationResult.setValid(false);
 				return validationResult;
@@ -67,9 +76,26 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	}
 
 	@Override
-	public ValidationResult validateUpdating(Role data, String header) {
-		// TODO Auto-generated method stub
-		return null;
+	public ValidationResult validateUpdating(Role role, String header) {
+		ValidationResult validationResult = new ValidationResult();
+
+		if (role.getRoleId() == null || role.getRoleId().isEmpty()) {
+			validationResult.setMessage("Role ID cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}
+
+		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
+			validationResult.setMessage("Bad Request: Role name could not be blank.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+
+		}
+
+		validationResult.setValid(true);
+		return validationResult;
 	}
 
 	@Override

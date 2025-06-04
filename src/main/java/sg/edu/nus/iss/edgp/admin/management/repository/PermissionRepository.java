@@ -12,9 +12,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, String> {
- 
-	
-	List<Permission> findAll();
+
 	
 	@Query("SELECT p.permissionCode FROM Permission p WHERE p.role.roleId = :roleId")
 	List<String> findPermissionCodesByRoleId(@Param("roleId") String roleId);

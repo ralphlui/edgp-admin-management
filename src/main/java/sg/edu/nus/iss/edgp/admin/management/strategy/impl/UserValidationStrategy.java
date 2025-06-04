@@ -9,9 +9,11 @@ import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
+import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PasswordValidatorService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 
@@ -21,6 +23,9 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 
 	@Autowired
 	UserService userService;
+	
+	@Autowired
+	UserInvitationService userInvitationService;
 	
 	@Autowired
 	PasswordValidatorService passwordValidatorService;
@@ -232,6 +237,16 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 		User dbUser = userService.findByEmail(userReq.getEmail());
 		if (dbUser != null) {
 			validationResult.setMessage(userReq.getEmail() + " is existed.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(dbUser.getUserId());
+			validationResult.setUserName(dbUser.getUsername());
+			return validationResult;
+		}
+		
+		boolean invited = userInvitationService.existsByEmailIsUsed(userReq.getEmail());
+		if (invited) {
+			validationResult.setMessage("Invitation already sent to "+userReq.getEmail());
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);
 			validationResult.setValid(false);
 			validationResult.setUserId(dbUser.getUserId());

@@ -61,4 +61,16 @@ public class UserInvitationService implements IUserInvitationService{
 		
 	}
 
+	@Override
+	public boolean existsByEmailIsUsed(String email) {
+		try {
+		 return userInvitationRepository.existsByEmailAndUsedIsTrue(email);
+		}catch(Exception e) {
+			logger.error("Error occurred while role creating, " + e.toString());
+
+			 
+		}
+		return false;
+	}
+
 }

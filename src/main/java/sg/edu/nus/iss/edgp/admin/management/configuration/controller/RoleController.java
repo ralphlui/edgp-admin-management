@@ -48,8 +48,6 @@ public class RoleController {
 	@Autowired
 	private  RoleService roleService;
 	
-	@Autowired
-	private JWTService jwtService;
 	
 	@Autowired
 	private RoleValidationStrategy roleValidationStrategy;
@@ -63,12 +61,12 @@ public class RoleController {
 	
 	@PostMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<RoleDTO>> createRole(@RequestHeader("Authorization") String authorizationHeader,
-			@RequestPart("role") Role role) {
+			@RequestBody Role role) {
 
 		logger.info("Call role create API...");
 		String message = "";
 		String activityType = "CreatRole";
-		String endpoint = API_ENDPOINT + "/create";
+		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.POST;
 		 
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint, httpMethod);
@@ -100,21 +98,21 @@ public class RoleController {
 
 	}
 
-	@PutMapping(value = "/update", produces = "application/json")
+	@PutMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<RoleDTO>> updateRole(@RequestHeader("Authorization") String authorizationHeader,
 			@RequestBody Role role) {
 
 		logger.info("Calling Role update API...");
 
 		String activityType = "Update Role";
-		String endpoint = API_ENDPOINT + "/update";
+		String endpoint = API_ENDPOINT ;
 		HTTPVerb httpMethod = HTTPVerb.PUT;
 		String message = "";
-		String userId = INVALID_USER_ID;
+		
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint, httpMethod);
 
 		try {
-			userId = jwtService.retrieveUserID(authorizationHeader);
+			 
 			String roleId = GeneralUtility.makeNotNull(role.getRoleId()).trim();
 
 			if (!roleId.equals("")) {

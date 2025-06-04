@@ -16,6 +16,7 @@ public class DTOMapper {
 		roleDTO.setRoleId(role.getRoleId());
 		roleDTO.setRoleName(role.getRoleName());
 		roleDTO.setRoleDescription(role.getRoleDescription());
+		roleDTO.setStatus(role.isStatus());
 		return roleDTO;
 		
 	}

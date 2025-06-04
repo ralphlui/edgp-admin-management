@@ -12,4 +12,6 @@ public interface UserInvitationRepository extends JpaRepository<UserInvitation, 
 	
 	Optional<UserInvitation> findByToken(String token);
     boolean existsByEmail(String email);
+    
+    boolean existsByEmailAndUsedIsTrue(String email);
 }

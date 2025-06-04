@@ -32,7 +32,6 @@ public class PermissionService implements IPermissionService {
 		try {
 
 			List<Permission> permissions = permissionRepository.findAll();
-
 			List<PermissionDTO> permissionDTOs = new ArrayList<>();
 
 			for (Permission p : permissions) {
