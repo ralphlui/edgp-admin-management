@@ -18,6 +18,7 @@ import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
+import sg.edu.nus.iss.edgp.admin.management.utility.JSONReader;
 
 @Service
 public class UserInvitationService implements IUserInvitationService {
@@ -26,6 +27,9 @@ public class UserInvitationService implements IUserInvitationService {
 
 	@Autowired
 	private UserInvitationRepository userInvitationRepository;
+	
+	@Autowired
+	private JSONReader jsonReader;
 
 	@Override
 	public String generateSecureToken() {
@@ -36,7 +40,7 @@ public class UserInvitationService implements IUserInvitationService {
 	}
 
 	@Override
-	public UserInvitationDTO createInvitation(UserRequest userReq) {
+	public UserInvitationDTO createInvitation(UserRequest userReq, String authorizationHeader) {
 		try {
 			String token = this.generateSecureToken();
 
@@ -52,6 +56,9 @@ public class UserInvitationService implements IUserInvitationService {
 			if (dbInvitation == null) {
 				throw new Exception("User invitation is not successful");
 			}
+			//send email
+			jsonReader.sendUserInviteEmail(dbInvitation, authorizationHeader);
+			//
 			return DTOMapper.toUserInvitationDTO(dbInvitation);
 		} catch (Exception e) {
 			logger.error("Error occurred while user invitation, " + e.toString());

@@ -6,7 +6,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 
 public interface IUserInvitationService {
 	
-	UserInvitationDTO createInvitation (UserRequest userReq);
+	UserInvitationDTO createInvitation (UserRequest userReq,String authorizationHeader);
 	
 	UserInvitationDTO updateInvitation (UserRequest userReq);
 	

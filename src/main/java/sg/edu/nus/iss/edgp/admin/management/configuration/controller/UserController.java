@@ -173,9 +173,9 @@ public class UserController {
 
 			if (validationResult.isValid()) {
 
-				UserInvitationDTO userInvitationDTO = userInvitationService.createInvitation(userRequest);
+				UserInvitationDTO userInvitationDTO = userInvitationService.createInvitation(userRequest,authorizationHeader);
 				if (userInvitationDTO != null) {
-					// to send email
+					
 					message = userRequest.getEmail() + " is invited successfully";
 					auditService.logAudit(auditDTO, 200, message, authorizationHeader);
 					return ResponseEntity.ok(APIResponse.success(userInvitationDTO, message));
