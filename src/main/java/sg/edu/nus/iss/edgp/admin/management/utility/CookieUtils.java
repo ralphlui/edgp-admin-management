@@ -2,8 +2,10 @@ package sg.edu.nus.iss.edgp.admin.management.utility;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.security.InvalidKeyException;
 import jakarta.servlet.http.HttpServletRequest;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
 import jakarta.servlet.http.Cookie;
@@ -52,8 +55,8 @@ public class CookieUtils {
                 .findFirst();
     }
 	
-	public HttpHeaders buildAuthHeadersWithCookies(String userName, String email, String userid, String refreshToken) throws InvalidKeyException, Exception {	
-		String newAccessToken = jwtService.generateToken(userName, email, userid);
+	public HttpHeaders buildAuthHeadersWithCookies(UserDTO userDTO, String refreshToken) throws InvalidKeyException, Exception {	
+		String newAccessToken = jwtService.generateToken(userDTO);
 		String newRefreshToken = Objects.requireNonNullElse(refreshToken, refreshTokenService.generateOpaqueRefreshToken());
 
 		ResponseCookie accessTokenCookie = createCookie("access_token", newAccessToken, false, 1);
@@ -62,7 +65,7 @@ public class CookieUtils {
 		// Add cookie to headers
 		HttpHeaders headers = createHttpHeader(accessTokenCookie, refreshTokenCookie);
 		if (refreshToken == null) {
-			refreshTokenService.saveRefreshToken(userid, newRefreshToken);
+			refreshTokenService.saveRefreshToken(userDTO.getUserID(), newRefreshToken);
 		}
 			
 		return headers;

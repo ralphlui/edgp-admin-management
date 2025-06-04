@@ -31,7 +31,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 			return validationResult;
 		}
 
-		ValidationResult validationObjResult = validateObject(userId, authorizationHeader);
+		ValidationResult validationObjResult = validateObject(userId);
 		if (!validationObjResult.isValid()) {
 			return validationObjResult;
 		}
@@ -86,7 +86,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	}
 
 	@Override
-	public ValidationResult validateObject(String data, String header) {
+	public ValidationResult validateObject(Role data, String header) {
 		// TODO Auto-generated method stub
 		return null;
 	}

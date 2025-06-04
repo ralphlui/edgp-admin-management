@@ -5,12 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import lombok.AllArgsConstructor;
+import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PasswordValidatorService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 
@@ -23,6 +24,9 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	
 	@Autowired
 	PasswordValidatorService passwordValidatorService;
+	
+	@Autowired
+	RoleService roleService;
 
 	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
@@ -61,6 +65,23 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			validationResult.setUserId(userReq.getUserId());
 			validationResult.setUserName(userReq.getUsername());
 			return validationResult;
+		}
+		
+		if (userReq.getRole() == null || userReq.getRole().isEmpty()) {
+			validationResult.setMessage("Role cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}else {
+		
+		RoleDTO roleDTO = roleService.findByRoleName(userReq.getRole());
+
+		if (roleDTO == null || roleDTO.getRoleId() == null || roleDTO.getRoleId().isEmpty()) {
+			validationResult.setMessage("Invalid role: " + userReq.getRole());
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}
 		}
 
 		validationResult.setValid(true);
@@ -193,9 +214,50 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	}
 
 	@Override
-	public ValidationResult validateObject(String data, String header) {
-		// TODO Auto-generated method stub
-		return null;
+	public ValidationResult validateObject(UserRequest userReq, String header) {
+		ValidationResult validationResult = new ValidationResult();
+
+		if (userReq.getEmail() == null || userReq.getEmail().isEmpty()) {
+
+			String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+					: INVALID_USER_NAME;
+			validationResult.setMessage("Email cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(INVALID_USER_ID);
+			validationResult.setUserName(userName);
+			return validationResult;
+		}
+
+		User dbUser = userService.findByEmail(userReq.getEmail());
+		if (dbUser != null) {
+			validationResult.setMessage(userReq.getEmail() + " is existed.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(dbUser.getUserId());
+			validationResult.setUserName(dbUser.getUsername());
+			return validationResult;
+		}
+		
+		if (userReq.getRole() == null || userReq.getRole().isEmpty()) {
+			validationResult.setMessage("Role cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}else {
+		
+		RoleDTO roleDTO = roleService.findByRoleName(userReq.getRole());
+
+		if (roleDTO == null || roleDTO.getRoleId() == null || roleDTO.getRoleId().isEmpty()) {
+			validationResult.setMessage("Invalid role: " + userReq.getRole());
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}
+		}
+
+		validationResult.setValid(true);
+		return validationResult;
 	}
 
 	

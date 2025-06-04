@@ -17,7 +17,7 @@ public class UserRequest {
 	private String username;
 	private String password;
 	private Boolean active;
-	private Role role;
+	private String role;
 	private String accountVerificationCode; 
     private String otp;
 	

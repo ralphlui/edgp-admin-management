@@ -1,18 +1,17 @@
 package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,120 +28,194 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.*;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
+import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.UserValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.CookieUtils;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
-import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 
-@RequiredArgsConstructor
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/admin/users")
 @Validated
 public class UserController {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-	
+
 	private final UserValidationStrategy userValidationStrategy;
 	private final UserService userService;
+	private final UserInvitationService userInvitationService;
 	private final JWTService jwtService;
 	private final CookieUtils cookieUtils;
-	
-	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
-	//private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
-	
-	private static final String API_ENDPOINT = "api/admin/users";
-	
-	private final APIResponse<UserDTO> apiResponse = null;
 
-	
+	@Autowired
+	private AuditService auditService;
+
+	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
+	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
+
+	private static final String API_ENDPOINT = "api/admin/users";
+	private static final String UNEXPECTED_ERROR = "An unexpected error occurred. Please contact support.";
+	private static final String LOG_MESSAGE_FORMAT = "{} {}";
+
+	@Value("${audit.activity.type.prefix}")
+	String activityTypePrefix;
+
 	@PostMapping(value = "", produces = "application/json")
-	public ResponseEntity<APIResponse<UserDTO>> createUser(@RequestHeader("Authorization") String authorizationHeader, @RequestBody UserRequest userRequest) {
+	public ResponseEntity<APIResponse<UserDTO>> createUser(@RequestHeader("Authorization") String authorizationHeader,
+			@RequestBody UserRequest userRequest) {
 		logger.info("Call user create API...");
 		String message;
 		String activityType = "Authentication-CreateUser";
 		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.POST;
-		String userid = INVALID_USER_ID;	
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
-			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,authorizationHeader);
-			
-			userid = validationResult.getUserId();
+			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,
+					authorizationHeader);
+
 			if (validationResult.isValid()) {
-				
+
 				UserDTO userDTO = userService.createUser(userRequest);
 				message = userRequest.getEmail() + " is created successfully";
-				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userid, activityType, endpoint,
-						httpMethod, message, userDTO, authorizationHeader,null);
-				
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.ok(APIResponse.success(userDTO, message));
+
 			} else {
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
-						httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
-						authorizationHeader);
+
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(APIResponse.error(validationResult.getMessage()));
+
 			}
-		} catch (Exception ex) {
-			message = "An error has occurred while processing the create Role API request.";
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint, httpMethod,
-					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
+		} catch (Exception e) {
+
+			message = UNEXPECTED_ERROR;
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 
 	}
-	
+
 	@PutMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> updateUser(@RequestHeader("Authorization") String authorizationHeader,
 			@RequestBody UserRequest userRequest) {
 		logger.info("Call user update API...");
 		String message;
 		String activityType = "Authentication-UpdateUser";
-		String apiEndPoint = String.format(API_ENDPOINT);
+		String endpoint = String.format(API_ENDPOINT);
 		HTTPVerb httpMethod = HTTPVerb.PUT;
 		message = "Update User failed due to ";
-		String loginUserId = INVALID_USER_ID;	
-		
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
 			String userID = userRequest.getUserId();
-		    loginUserId = jwtService.retrieveUserID(authorizationHeader);
-			ValidationResult validationResult = userValidationStrategy.validateUpdating(userRequest,authorizationHeader);
+
+			ValidationResult validationResult = userValidationStrategy.validateUpdating(userRequest,
+					authorizationHeader);
 
 			if (validationResult.isValid()) {
 
 				userRequest.setUserId(userID);
 				UserDTO userDTO = userService.updateUser(userRequest);
 				message = "User updated successfully.";
-				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(loginUserId, activityType, apiEndPoint,
-						httpMethod, message, userDTO, authorizationHeader,null);
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
 
 			} else {
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(loginUserId, activityType, apiEndPoint,
-						httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
-						authorizationHeader);
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(APIResponse.error(validationResult.getMessage()));
+
 			}
-		} catch (Exception ex) {
-			
-			message = "An error has occurred while processing the create Role API request.";
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(loginUserId, activityType, apiEndPoint, httpMethod,
-					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
+		} catch (Exception e) {
+
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 	}
-	
+
+	@PostMapping(value = "/invite", produces = "application/json")
+	public ResponseEntity<APIResponse<UserInvitationDTO>> inviteUser(
+			@RequestHeader("Authorization") String authorizationHeader, @RequestBody UserRequest userRequest) {
+		logger.info("Call user invite API...");
+		String message;
+		String activityType = "Authentication-InviteUser";
+		String endpoint = API_ENDPOINT + "/inviteUser";
+		HTTPVerb httpMethod = HTTPVerb.POST;
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
+		try {
+			ValidationResult validationResult = userValidationStrategy.validateObject(userRequest, authorizationHeader);
+
+			if (validationResult.isValid()) {
+
+				UserInvitationDTO userInvitationDTO = userInvitationService.createInvitation(userRequest);
+				if (userInvitationDTO != null) {
+					// to send email
+					message = userRequest.getEmail() + " is invited successfully";
+					auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+					return ResponseEntity.ok(APIResponse.success(userInvitationDTO, message));
+				} else {
+					message = "User invitation is not successful";
+					auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+							.body(APIResponse.error(validationResult.getMessage()));
+
+				}
+
+			} else {
+
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(APIResponse.error(validationResult.getMessage()));
+
+			}
+		} catch (Exception e) {
+
+			message = UNEXPECTED_ERROR;
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+		}
+
+	}
+
 	@GetMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<List<UserDTO>>> getAllActiveUsers(
-			@RequestHeader("Authorization") String authorizationHeader, @Valid @ModelAttribute SearchRequest searchRequest) {
+			@RequestHeader("Authorization") String authorizationHeader,
+			@Valid @ModelAttribute SearchRequest searchRequest) {
 		logger.info("Call user getAll API with page={}, size={}", searchRequest.getPage(), searchRequest.getSize());
 		String message = "";
 		String activityType = "Authentication-RetrieveAllActiveUsers";
-		String apiEndPoint = API_ENDPOINT;
+		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.GET;
-	    message = "Retreving active user list is failed due to ";
-		String userId = INVALID_USER_ID;
+		message = "Retreving active user list is failed due to ";
 		
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
-			
-			userId = jwtService.retrieveUserID(authorizationHeader);
-			Pageable pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize(), Sort.by("username").ascending());
+ 
+			Pageable pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize(),
+					Sort.by("username").ascending());
 			Map<Long, List<UserDTO>> resultMap = userService.findActiveUsers(pageable);
 			logger.info("all active user list size {}", resultMap.size());
 
@@ -155,22 +228,26 @@ public class UserController {
 
 			if (!users.isEmpty()) {
 				message = "Successfully get all active verified user.";
-				return apiResponse.handleResponseListAndSendAuditLogForSuccessCase(userId, activityType,
-						apiEndPoint, httpMethod, message, users, users.size(), authorizationHeader,null);
+
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(users, message, totalRecord));
+
 			} else {
 				message = "No Active User List.";
-				return apiResponse.handleEmptyResponseListAndSendAuditLogForSuccessCase(userId, activityType,
-						apiEndPoint, httpMethod, message, users, users.size(), authorizationHeader);
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.noList(users, message));
+
 			}
 
-		} catch (Exception ex) {
-			message = "The attempt to retrieve active role list was unsuccessful.";
-			return apiResponse.handleResponseListAndSendAuditLogForFailuresCase(userId, activityType,
-					apiEndPoint, httpMethod, message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(),
-					authorizationHeader);
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+
 		}
 	}
-	
+
 	@PatchMapping(value = "/verify", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> verifyUser(@RequestBody UserRequest userRequest) {
 
@@ -179,123 +256,176 @@ public class UserController {
 		verifyid = GeneralUtility.makeNotNull(verifyid);
 		String message = "";
 		String activityType = "Authentication-VerifyUser";
-		String apiEndPoint = API_ENDPOINT+"/verify";
+		String endpoint = API_ENDPOINT + "/verify";
 		HTTPVerb httpMethod = HTTPVerb.PATCH;
 		message = "User verification is failed due to ";
-		String auditLogUserId  =INVALID_USER_ID;
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
 
 			if (!verifyid.isEmpty()) {
 				UserDTO verifiedUserDTO = userService.verifyUser(verifyid);
-			    auditLogUserId = verifiedUserDTO.getUserID();
-				String auditLogUserName = verifiedUserDTO.getUsername();
 				message = "User successfully verified.";
-				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(auditLogUserId, activityType, apiEndPoint,
-						httpMethod, message, verifiedUserDTO, "",null);
-				
-								
+				auditService.logAudit(auditDTO, 200, message, "");
+
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(verifiedUserDTO, message));
+
 			} else {
 
 				message = "Vefriy Id could not be blank.";
 				logger.error(message);
 				// To Do
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(auditLogUserId, activityType, apiEndPoint,
-						httpMethod, message, HttpStatus.BAD_REQUEST, "",
-						"");
-				
+				auditService.logAudit(auditDTO, 404, message, "");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(message));
+
 			}
-		} catch (Exception ex) {
-			// To Do
-			HttpStatusCode htpStatuscode = ex instanceof UserNotFoundException ? HttpStatus.NOT_FOUND
-					: HttpStatus.INTERNAL_SERVER_ERROR;
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(auditLogUserId, activityType, apiEndPoint, httpMethod,
-					message, htpStatuscode, ex.toString(), "");
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+		}
 
 	}
 
-	}
-	
 	@PostMapping(value = "/login", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> loginUser(@RequestBody UserRequest userRequest) {
 		logger.info("Call user login API...");
 		String message = "";
 		String activityType = "Authentication-LoginUser";
-		String apiEndPoint = API_ENDPOINT+ "/login";
+		String endpoint = API_ENDPOINT + "/login";
 		HTTPVerb httpMethod = HTTPVerb.POST;
 		message = "User failed to login due to ";
-		String auditLogUserId  =INVALID_USER_ID;
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
 			ValidationResult validationResult = userValidationStrategy.validateObject(userRequest.getEmail());
-			auditLogUserId = validationResult.getUserId();
-			String auditLogUserName = validationResult.getUserName();
 
 			if (!validationResult.isValid()) {
 
 				logger.error("Login Validation Error: {}", validationResult.getMessage());
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(auditLogUserId, activityType, apiEndPoint,
-						httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
-						"");
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), "");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(APIResponse.error(validationResult.getMessage()));
+
 			}
 
 			UserDTO userDTO = userService.loginUser(userRequest.getEmail(), userRequest.getPassword());
 			message = userDTO.getEmail() + " login successfully";
- 
-		    HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO.getUsername(), userDTO.getEmail(),
-						userDTO.getUserID(), null);
-				
-		    return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(auditLogUserId, activityType, apiEndPoint,
-						httpMethod, message, userDTO, "",headers);
-				 
 
-		} catch (Exception ex) {
-			HttpStatusCode htpStatuscode = ex instanceof UserNotFoundException ? HttpStatus.UNAUTHORIZED
-					: HttpStatus.INTERNAL_SERVER_ERROR;
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(auditLogUserId, activityType, apiEndPoint, httpMethod,
-					message, htpStatuscode, ex.toString(), "");
+			HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO, null);
+
+			auditService.logAudit(auditDTO, 200, message, "");
+			return ResponseEntity.status(HttpStatus.OK).headers(headers).body(APIResponse.success(userDTO, message));
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 	}
-	
-	@PostMapping(value = "/active", produces = "application/json")
-	public ResponseEntity<APIResponse<UserDTO>> checkSpecificActiveUser(
-			@RequestHeader("Authorization") String authorizationHeader,@RequestHeader("X-User-Id") String userID) {
+
+	@GetMapping(value = "/profile", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> getUserProfile(
+			@RequestHeader("Authorization") String authorizationHeader, @RequestHeader("X-User-Id") String userID) {
 		logger.info("Call user active API...");
 		String message = "";
-		String activityType = "Authentication-RetrieveActiveUserByUserId";
-		String apiEndPoint = String.format("api/users/active");
+		String activityType = "Authentication-RetrieveUserByUserId";
+		String endpoint = String.format("api/users/profile");
 		HTTPVerb httpMethod = HTTPVerb.GET;
-		String activityDesc = "Retrieving active user by id failed due to ";
-		
-		HashMap<String,String> userInfo = new HashMap<String, String>();
-		
+		message = "Retrieving active user by id failed due to ";
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
 		try {
-			userInfo = userService.retrieveUserIDAndNameFromToken(authorizationHeader);
-			User user  = userService.findActiveUserByID(userID);
+			User user = userService.findActiveUserByID(userID);
 
 			if (user == null) {
-				message ="Active User not foud.";
+				message = "Active User not foud.";
 				logger.error("Active User not foud.");
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint,
-						httpMethod, "", HttpStatus.NOT_FOUND, "",
-						authorizationHeader); 
+				auditService.logAudit(auditDTO, 404, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(message));
 
 			}
 
-			UserDTO userDTO = userService.checkSpecificActiveUser(userID);
+			UserDTO userDTO = userService.checkSpecificActiveUserByID(userID);
 			message = userDTO.getEmail() + " is Active";
-			 
-			return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint,
-					httpMethod, message, userDTO, "",null);
-		
 
-		} catch (Exception ex) {
-			// To Do
-			HttpStatusCode htpStatuscode = ex instanceof UserNotFoundException ? HttpStatus.NOT_FOUND
-					: HttpStatus.INTERNAL_SERVER_ERROR;
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userInfo.get(INVALID_USER_ID), activityType, apiEndPoint, httpMethod,
-					message, htpStatuscode, ex.toString(), "");
+			auditService.logAudit(auditDTO, 200, message, "");
+			return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 	}
-	
 
+	@GetMapping(value = "/accessToken", produces = "application/json")
+	public ResponseEntity<APIResponse<JWTDTO>> generateAccessToken(@RequestHeader("X-User-Email") String email) {
+
+		String message = "";
+		String activityType = "Authentication-AccessToken";
+		String endpoint = "/api/users/accessToken";
+		HTTPVerb httpMethod = HTTPVerb.GET;
+		message = "Requesting new access token is failed due to ";
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
+		try {
+			String userEmail = email;
+
+			if (GeneralUtility.makeNotNull(userEmail).equals("")) {
+				message = "Invalid user.";
+				logger.info("Requesting access Token: {}", message);
+
+				auditService.logAudit(auditDTO, 404, message, "");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(message));
+			}
+
+			// find user
+			UserDTO user = userService.checkSpecificActiveUserByEmail(userEmail);
+			if (user == null) {
+				message = "Invalid user.";
+				auditService.logAudit(auditDTO, 400, message, "");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
+
+			}
+
+			String accessToken = jwtService.generateToken(user);
+
+			if (accessToken != null) {
+
+				message = "Access token generated successfully.";
+				JWTDTO jwtDTO = new JWTDTO();
+				jwtDTO.setToken(accessToken);
+				auditService.logAudit(auditDTO, 200, message, "");
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(jwtDTO, message));
+
+			} else {
+
+				message = "Failed to generate token.";
+				logger.info("Requesting access Token: {}", message);
+				auditService.logAudit(auditDTO, 401, message, "");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(message));
+
+			}
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+		}
+
+	}
 
 }

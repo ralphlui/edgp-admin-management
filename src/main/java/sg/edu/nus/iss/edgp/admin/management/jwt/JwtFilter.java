@@ -6,10 +6,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
-import sg.edu.nus.iss.edgp.admin.management.strategy.impl.AuditService;
+import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,29 +23,39 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
 	private final JWTService jwtService;
-    private final AuditService auditLogService;
-	
+	private final AuditService auditLogService;
+
+	public JwtFilter(JWTService jwtService, AuditService auditLogService) {
+		this.jwtService = jwtService;
+		this.auditLogService = auditLogService;
+	}
+
+	@Value("${audit.activity.type.prefix}")
+	String activityTypePrefix;
+
 	private String userID;
 	private String userName;
 	private String apiEndpoint;
-	private String httpMethod;
-
+	private HTTPVerb httpMethod;
+ 
+	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		
+
 		String authHeader = request.getHeader("Authorization");
 	    apiEndpoint = request.getRequestURI();
-	    httpMethod = request.getMethod();
+	    String methodName = request.getMethod();
+	    httpMethod = HTTPVerb.valueOf(methodName);
+	    
 	    userID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	    userName = AuditLogInvalidUser.INVALID_USER_NAME.toString();
 	    String requestURI = request.getRequestURI(); 
 
-		if (requestURI.contains("google/userinfo") || requestURI.contains("/api/users/login") || requestURI.contains("/api/users/refreshToken") || authHeader == null || !authHeader.startsWith("Bearer ")) {
+		if (requestURI.contains("accessToekn") || requestURI.contains("/login") || requestURI.contains("/refreshToken") || authHeader == null || !authHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -63,25 +76,29 @@ public class JwtFilter extends OncePerRequestFilter {
 					SecurityContextHolder.getContext().setAuthentication(authentication);
 				}
 			} catch (ExpiredJwtException e) {
-				handleException(response, "JWT token is expired", HttpServletResponse.SC_UNAUTHORIZED);
+				handleException(response, "JWT token is expired", HttpServletResponse.SC_UNAUTHORIZED,jwtToken);
 				return;
 			} catch (MalformedJwtException e) {
-				handleException(response, "Invalid JWT token", HttpServletResponse.SC_UNAUTHORIZED);
+				handleException(response, "Invalid JWT token", HttpServletResponse.SC_UNAUTHORIZED,jwtToken);
 				return;
 			} catch (SecurityException e) {
-				handleException(response, "JWT signature is invalid", HttpServletResponse.SC_UNAUTHORIZED);
+				handleException(response, "JWT signature is invalid", HttpServletResponse.SC_UNAUTHORIZED,jwtToken);
 				return;
 			} catch (Exception e) {
-				handleException(response, e.getMessage(), HttpServletResponse.SC_UNAUTHORIZED);
+				handleException(response, e.getMessage(), HttpServletResponse.SC_UNAUTHORIZED,jwtToken);
 				return;
 			}
+			
+			
 		}
 
 		filterChain.doFilter(request, response);
 	}
-	
-	private void handleException(HttpServletResponse response, String message, int status) throws IOException {
+
+	private void handleException(HttpServletResponse response, String message, int status, String token)
+			throws IOException {
 		TokenErrorResponse.sendErrorResponse(response, message, status, "UnAuthorized");
-		auditLogService.sendAuditLogToSqs(Integer.toString(status), userID, userName, "", message, apiEndpoint, AuditLogResponseStatus.FAILED.toString(), httpMethod, message);
+		AuditDTO auditDTO = auditLogService.createAuditDTO(userID, "", activityTypePrefix, apiEndpoint, httpMethod);
+		auditLogService.logAudit(auditDTO, status, message, token);
 	}
 }

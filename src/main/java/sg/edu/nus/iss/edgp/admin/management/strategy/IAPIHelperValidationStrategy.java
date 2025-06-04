@@ -11,8 +11,8 @@ public interface IAPIHelperValidationStrategy<T> {
 
 	ValidationResult validateObject(String data);
 	
-	ValidationResult validateObject(String data, String header);
+	ValidationResult validateObject(T data, String header);
 	
 	ValidationResult validateObjectByUserId(T data,boolean requiresPasswordValidation);
-
+ 
 }

@@ -80,9 +80,9 @@ public class UserServiceTest {
 	        
 		userRequest = new UserRequest();
 		user = new User(userRequest.getEmail(), userRequest.getUsername(), userRequest.getPassword(),
-				userRequest.getRole(), true);
+				role, true);
 		userRequest.setUserId("8f6e8b84-1219-4c28-a95c-9891c11328b7");
-		userRequest.setRole(role);
+		userRequest.setRole("OrgAdmin");
 		user.setUserId(userRequest.getUserId());
 		mockUsers.add(user);
 

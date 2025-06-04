@@ -4,10 +4,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -15,26 +17,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.APIResponse;
+import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.RoleValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/admin/roles")
 @Validated
 public class RoleController {
 
 	private static final Logger logger = LoggerFactory.getLogger(RoleController.class);	 
 	private static final String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();	
-	private static final String API_ADMIN_ROLES_ENDPOINT = "/api/admin/roles";
+	private static final String API_ENDPOINT = "/api/admin/roles";
+	private static final String UNEXPECTED_ERROR = "An unexpected error occurred. Please contact support.";
+	private static final String LOG_MESSAGE_FORMAT = "{} {}";
+	
 	
 	@Autowired
 	private  RoleService roleService;
@@ -45,42 +54,48 @@ public class RoleController {
 	@Autowired
 	private RoleValidationStrategy roleValidationStrategy;
 	
-	
-	private final APIResponse<RoleDTO> apiResponse = null;
+	@Autowired
+	private AuditService auditService;
 
+	@Value("${audit.activity.type.prefix}")
+	String activityTypePrefix;
+	
+	
+	@PostMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<RoleDTO>> createRole(@RequestHeader("Authorization") String authorizationHeader,
 			@RequestPart("role") Role role) {
 
 		logger.info("Call role create API...");
 		String message = "";
 		String activityType = "CreatRole";
-		String endpoint = API_ADMIN_ROLES_ENDPOINT + "/create";
+		String endpoint = API_ENDPOINT + "/create";
 		HTTPVerb httpMethod = HTTPVerb.POST;
-		String userid = INVALID_USER_ID;
+		 
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint, httpMethod);
 
 		try {
-			userid = jwtService.retrieveUserID(authorizationHeader);
+			 
 			ValidationResult validationResult = roleValidationStrategy.validateCreation(role, authorizationHeader);
 
 			if (validationResult.isValid()) {
 				RoleDTO roleDTO = roleService.createRole(role);
 				message = roleDTO.getRoleName() + " is created successfully.";
-				return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userid, activityType, endpoint,
-						httpMethod, message, roleDTO, authorizationHeader,null);
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+                return ResponseEntity.ok(APIResponse.success(roleDTO, message));
+                
 
 			} else {
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint,
-						httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
-						authorizationHeader);
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(validationResult.getMessage()));
+               
 			}
 
-		} catch (Exception ex) {
-			message = "An error has occurred while processing the create Role API request.";
-
-			logger.info(message);
-
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userid, activityType, endpoint, httpMethod,
-					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
+		} catch (Exception e) {
+			message = UNEXPECTED_ERROR;
+	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+	        auditDTO.setRemarks(e.getMessage());
+	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 
 	}
@@ -92,10 +107,11 @@ public class RoleController {
 		logger.info("Calling Role update API...");
 
 		String activityType = "Update Role";
-		String endpoint = API_ADMIN_ROLES_ENDPOINT + "/update";
+		String endpoint = API_ENDPOINT + "/update";
 		HTTPVerb httpMethod = HTTPVerb.PUT;
 		String message = "";
 		String userId = INVALID_USER_ID;
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint, httpMethod);
 
 		try {
 			userId = jwtService.retrieveUserID(authorizationHeader);
@@ -109,39 +125,36 @@ public class RoleController {
 					RoleDTO roleDTO = roleService.updateRole(role);
 					if (roleDTO != null && !roleDTO.getRoleId().isEmpty()) {
 						message = roleDTO.getRoleName() + " is updated successfully.";
-						return apiResponse.handleResponseAndSendAudtiLogForSuccessCase(userId, activityType, endpoint,
-								httpMethod, message, roleDTO, authorizationHeader,null);
+						auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+		                return ResponseEntity.ok(APIResponse.success(roleDTO, message));
+		               
 
 					} else {
-
-						message = "The update for the campaign has failed. Please check the provided Role :"
-								+ role.getRoleName();
-						logger.error("Calling Role update API failed...");
-
-						return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
-								httpMethod, message, HttpStatus.INTERNAL_SERVER_ERROR, "", authorizationHeader);
+						auditService.logAudit(auditDTO, 500, validationResult.getMessage(), authorizationHeader);
+		                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(validationResult.getMessage()));
+		                 
 					}
 
 				} else {
-					return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
-							httpMethod, validationResult.getMessage(), validationResult.getStatus(), "",
-							authorizationHeader);
+					auditService.logAudit(auditDTO, 400, validationResult.getMessage(), authorizationHeader);
+	                return ResponseEntity.status(validationResult.getStatus()).body(APIResponse.error(validationResult.getMessage()));
+	                
 				}
 			} else {
 				message = "Bad Request:Campaign ID could not be blank.";
 				logger.error(message);
 
-				return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint,
-						httpMethod, message, HttpStatus.BAD_REQUEST, "", authorizationHeader);
+				auditService.logAudit(auditDTO, 400, message, authorizationHeader);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
+                
 			}
 
-		} catch (Exception ex) {
-			message = "An error has occurred while processing the update Role API request.";
-
-			logger.info(message);
-
-			return apiResponse.handleResponseAndSendAudtiLogForFailureCase(userId, activityType, endpoint, httpMethod,
-					message, HttpStatus.INTERNAL_SERVER_ERROR, ex.toString(), authorizationHeader);
+		} catch (Exception e) {
+			message = UNEXPECTED_ERROR;
+	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+	        auditDTO.setRemarks(e.getMessage());
+	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 	}
 
@@ -152,29 +165,31 @@ public class RoleController {
 		final String activityType = "GetAllActiveRoleList";
 
 		final HTTPVerb httpMethod = HTTPVerb.GET;
-		String userId = INVALID_USER_ID;
 		String message = "";
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, API_ENDPOINT, httpMethod);
 
 		try {
-			userId = jwtService.retrieveUserID(authorizationHeader);
-
+			
 			List<RoleDTO> roles = roleService.findByStatusTrue();
 
 			if (!roles.isEmpty()) {
 				message = "Successfully retrieved all active roles.";
-				return apiResponse.handleResponseListAndSendAuditLogForSuccessCase(userId, activityType,
-						API_ADMIN_ROLES_ENDPOINT, httpMethod, message, roles, roles.size(), authorizationHeader,null);
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(roles, message,roles.size()));
+				
 			} else {
 				message = "No Active Role List.";
-				return apiResponse.handleEmptyResponseListAndSendAuditLogForSuccessCase(userId, activityType,
-						API_ADMIN_ROLES_ENDPOINT, httpMethod, message, roles, roles.size(), authorizationHeader);
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(roles, message,roles.size()));
+				
 			}
 
 		} catch (Exception e) {
-			message = "The attempt to retrieve active role list was unsuccessful.";
-			return apiResponse.handleResponseListAndSendAuditLogForFailuresCase(userId, activityType,
-					API_ADMIN_ROLES_ENDPOINT, httpMethod, message, HttpStatus.INTERNAL_SERVER_ERROR, e.toString(),
-					authorizationHeader);
+			message = UNEXPECTED_ERROR;
+	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+	        auditDTO.setRemarks(e.getMessage());
+	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 	}
 

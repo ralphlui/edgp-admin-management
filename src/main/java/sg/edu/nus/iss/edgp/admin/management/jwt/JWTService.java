@@ -2,7 +2,10 @@ package sg.edu.nus.iss.edgp.admin.management.jwt;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -17,8 +20,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.InvalidKeyException;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 
 import java.nio.charset.StandardCharsets;
@@ -43,6 +48,7 @@ public class JWTService {
 	
 	private final JWTConfig jwtConfig;
 	private final ApplicationContext context;
+	private final PermissionService permissionService;
 
 	public static final String USER_EMAIL = "userEmail";
 	public static final String CLAIM_USERNAME = "userName";
@@ -172,11 +178,14 @@ public class JWTService {
 	}
 
 	
-	public String generateToken(String userName, String userEmail, String userID)
+	public String generateToken(UserDTO userDTO)
 			throws InvalidKeyException, Exception {
 		
 		
 		long tokenValidDuration;
+		
+		List<String> scopesFromDb = permissionService.findPermissionByRole(userDTO.getRole().getRoleName());
+		Set<String> scopes = new HashSet<>(scopesFromDb);
 	    
 	    // Check if pentest is enabled and adjust token validity to 30 minutes
 	    if (pentestEnable.equalsIgnoreCase("true")) {
@@ -190,9 +199,10 @@ public class JWTService {
 
 		
 		Map<String, Object> claims = new HashMap<>();
-		claims.put("userEmail", userEmail);
-		claims.put(CLAIM_USERNAME, userName);
-		return Jwts.builder().claims().add(claims).subject(userID).issuedAt(new Date(System.currentTimeMillis()))
+		claims.put("userEmail", userDTO.getEmail());
+		claims.put(CLAIM_USERNAME, userDTO.getUsername());
+		claims.put("scope", String.join(" ", scopes));
+		return Jwts.builder().claims().add(claims).subject(userDTO.getUserID()).issuedAt(new Date(System.currentTimeMillis()))
 				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
 	}
 	

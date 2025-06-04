@@ -19,10 +19,12 @@ import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
+import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
@@ -35,6 +37,7 @@ public class UserService implements IUserService{
 	private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
 	private final UserRepository userRepository;
+	private final RoleRepository roleRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
 	private final EncryptionUtils encryptionUtils;
@@ -53,12 +56,13 @@ public class UserService implements IUserService{
 			user.setUsername(userReq.getUsername());
 			String encodedPassword = passwordEncoder.encode(userReq.getPassword());
 			user.setPassword(encodedPassword);
-			
-			user.setVerified(false);
+			//to modify
+			user.setVerified(true);
 			String code = UUID.randomUUID().toString();
 			user.setVerificationCode(code);
 			user.setActive(true);
-			user.setRole(userReq.getRole());
+			Role role = roleRepository.findByRoleName(userReq.getRole());
+			user.setRole(role);
 			
 			user.setCreatedDate(LocalDateTime.now());
 			 
@@ -230,10 +234,30 @@ public class UserService implements IUserService{
 		}
 	}
 
+	 
+
 	@Override
-	public UserDTO checkSpecificActiveUser(String userId) {
+	public UserDTO checkSpecificActiveUserByID(String userId) {
 		try {
 			User user = findByUserIdAndStatus(userId, true, true);
+			if (user == null) {
+				logger.error("Active user is not found.");
+				throw new UserNotFoundException("This user is not an active user");
+			}
+			logger.info("Active user is found.");
+			return DTOMapper.toUserDTO(user);
+			
+		} catch (Exception e) {
+			logger.error("Error occurred while checking specific active User, " + e.toString());
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@Override
+	public UserDTO checkSpecificActiveUserByEmail(String email) {
+		try {
+			User user = userRepository.findByEmailAndIsActiveAndIsVerified(email, true, true);
 			if (user == null) {
 				logger.error("Active user is not found.");
 				throw new UserNotFoundException("This user is not an active user");

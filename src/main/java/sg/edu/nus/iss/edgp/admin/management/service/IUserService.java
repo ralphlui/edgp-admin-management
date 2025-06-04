@@ -27,7 +27,8 @@ public interface IUserService {
 	 
      UserDTO loginUser(String email, String password);
      
-     UserDTO checkSpecificActiveUser(String userId);
+     UserDTO checkSpecificActiveUserByID(String userId);
 	 
+     UserDTO checkSpecificActiveUserByEmail(String email);
 	
 }
