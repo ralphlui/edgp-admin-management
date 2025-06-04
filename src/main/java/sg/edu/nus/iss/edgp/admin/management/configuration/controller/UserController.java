@@ -75,7 +75,7 @@ public class UserController {
 	String activityTypePrefix;
 
 	@PostMapping(value = "", produces = "application/json")
-	public ResponseEntity<APIResponse<UserDTO>> createUser(@RequestHeader("Authorization") String authorizationHeader,
+	public ResponseEntity<APIResponse<UserDTO>> createUser(
 			@RequestBody UserRequest userRequest) {
 		logger.info("Call user create API...");
 		String message;
@@ -87,19 +87,18 @@ public class UserController {
 				httpMethod);
 
 		try {
-			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,
-					authorizationHeader);
+			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,"");
 
 			if (validationResult.isValid()) {
 
 				UserDTO userDTO = userService.createUser(userRequest);
 				message = userRequest.getEmail() + " is created successfully";
-				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				auditService.logAudit(auditDTO, 200, message, "");
 				return ResponseEntity.ok(APIResponse.success(userDTO, message));
 
 			} else {
 
-				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), "");
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
 						.body(APIResponse.error(validationResult.getMessage()));
 
@@ -109,7 +108,7 @@ public class UserController {
 			message = UNEXPECTED_ERROR;
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
-			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+			auditService.logAudit(auditDTO, 500, message, "");
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 
