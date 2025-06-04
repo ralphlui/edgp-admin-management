@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -205,15 +206,15 @@ public class UserController {
 
 	}
 	
-	@PostMapping(value = "/set-password", produces = "application/json")
-	public ResponseEntity<APIResponse<UserDTO>> accountActivate(
+	@PostMapping(value = "/complete-registration", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> completeRegistration(
 			@RequestHeader("Authorization") String authorizationHeader, @RequestBody UserRequest userRequest) {
 		String token = userRequest.getUserInvitationtoken();
-		logger.info("Call user set password API with user invitation Token");
+		logger.info("Call complete registration API with user invitation Token");
 		token = GeneralUtility.makeNotNull(token);
 		String message = "";
-		String activityType = "Authentication-SetPassword";
-		String endpoint = API_ENDPOINT + "/set-password";
+		String activityType = "Authentication-CompleteRegistration";
+		String endpoint = API_ENDPOINT + "/complete-registration";
 		HTTPVerb httpMethod = HTTPVerb.POST;
 		message = "User set password is failed due to ";
 
@@ -460,7 +461,7 @@ public class UserController {
 
 		String message = "";
 		String activityType = "Authentication-AccessToken";
-		String endpoint = "/api/users/accessToken";
+		String endpoint = API_ENDPOINT+"/accessToken";
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Requesting new access token is failed due to ";
 
@@ -518,11 +519,11 @@ public class UserController {
 	 
 	@GetMapping(value = "/refreshToken", produces = "application/json")
 	public <T> ResponseEntity<APIResponse<T>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-		// Extract refresh token from cookies
+		 
 		String refreshToken = cookieUtils.getTokenFromCookies(request, REFRESH_TOKEN_COOKIE).orElse(null);
 		String message = "";
 		String activityType = "Authentication-RefreshToken";
-		String endpoint = "/api/users/refreshToken";
+		String endpoint = API_ENDPOINT+"/refreshToken";
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Requesting new access token is failed due to ";
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
@@ -547,7 +548,7 @@ public class UserController {
 				userDTO.setEmail(savedRefreshToken.getUser().getEmail());
 				User user = userService.findByUserIdAndStatus(savedRefreshToken.getUser().getUserId(), true, true);
 				userDTO.setRole(user.getRole());
-				// Add cookie to headers
+				 
 				HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO, refreshToken);
 
 				message = "Token refresh is successful.";
@@ -572,6 +573,44 @@ public class UserController {
 			auditService.logAudit(auditDTO, 500, message, "");
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 
+		}
+
+	}
+	
+	@PatchMapping(value = "/resetPassword", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> resetPassword(@RequestBody UserRequest resetPwdReq) {
+
+		logger.info("Call user resetPassword API...");
+
+		String activityType = "Authentication-ResetPassword";
+		String endpoint = API_ENDPOINT +"/resetPassword";
+		HTTPVerb httpMethod = HTTPVerb.PATCH;
+		String message = "Reset password is failed due to ";
+
+		
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+		try {
+			ValidationResult validationResult = userValidationStrategy.validateObject(resetPwdReq.getEmail());
+			if (!validationResult.isValid()) {
+				logger.error("Reset passwrod validation is not successful");
+				auditService.logAudit(auditDTO, 400, message, "");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(validationResult.getMessage()));
+				
+			}
+
+			UserDTO userDTO = userService.resetPassword(resetPwdReq.getEmail(), resetPwdReq.getPassword());
+			message = "Reset Password is completed.";
+			
+            auditService.logAudit(auditDTO, 200, message, "");
+			return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
+			
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 
 	}

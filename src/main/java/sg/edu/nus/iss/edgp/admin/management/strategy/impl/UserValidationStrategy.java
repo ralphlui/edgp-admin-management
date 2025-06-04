@@ -276,5 +276,4 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	}
 
 	
-
 }

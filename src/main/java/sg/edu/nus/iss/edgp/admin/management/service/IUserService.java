@@ -19,6 +19,8 @@ public interface IUserService {
 	 
 	 UserDTO verifyUser(String verificationCode);
 	 
+	 UserDTO resetPassword(String userId, String password);
+	 
 	 User findByEmail(String email);
 	 
 	 User findActiveUserByID(String userId);

@@ -287,6 +287,8 @@ public class UserService implements IUserService{
 				user.setEmail(userInvitation.get().getEmail());
 				user.setActive(true);
 				user.setVerified(true);
+				String code = UUID.randomUUID().toString();
+				user.setVerificationCode(code);
 				Role role = roleRepository.findByRoleName(userInvitation.get().getRoleName());
 				user.setRole(role);
 				
@@ -312,5 +314,26 @@ public class UserService implements IUserService{
 		return null;
 	}
 
+	@Override
+	public UserDTO resetPassword(String email, String password) {
+		try {
+			User dbUser = userRepository.findByEmailAndIsActiveAndIsVerified(email, true, true);
+			if (dbUser == null) {
+				logger.error("Reset Password failed.");
+				throw new UserNotFoundException(
+						"Reset Password failed: Unable to find the user with this email :" + email);
+			}
+
+			dbUser.setPassword(passwordEncoder.encode(password));
+			User updatedUser = userRepository.save(dbUser);
+			logger.info("Reset Password is successful.");
+			return DTOMapper.toUserDTO(updatedUser);
+
+		} catch (Exception e) {
+			logger.error("Error occurred while validateUserLogin", e);
+			e.printStackTrace();
+			throw e;
+		}
+	}
 
 }
