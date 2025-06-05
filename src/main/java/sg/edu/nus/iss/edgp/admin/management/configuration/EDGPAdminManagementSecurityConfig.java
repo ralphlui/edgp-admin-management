@@ -26,7 +26,7 @@ import sg.edu.nus.iss.edgp.admin.management.jwt.JwtFilter;
 public class EDGPAdminManagementSecurityConfig {
 	private static final String[] SECURED_URLs = { "/api/admin/**" };
 
-	@Value("${allowed.origin}")
+	@Value("${client.url}")
 	private String allowedOrigin;
 
 	@Bean

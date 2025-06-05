@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class PermissionDTO {
  
-	private String permissionCode;
+	private String scope;
 	private String moduleName; 
 	private String fieldsName; 
 	private String sectionName;

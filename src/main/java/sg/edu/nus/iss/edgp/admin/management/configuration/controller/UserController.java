@@ -152,8 +152,8 @@ public class UserController {
 
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
-			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 	}
 
@@ -281,7 +281,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 
 	}
@@ -330,8 +330,8 @@ public class UserController {
 		} catch (Exception e) {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
-			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 
 		}
 	}
@@ -373,7 +373,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 
 	}
@@ -414,7 +414,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 	}
 
@@ -451,8 +451,8 @@ public class UserController {
 		} catch (Exception e) {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
-			auditService.logAudit(auditDTO, 500, message, authorizationHeader);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 	}
 
@@ -511,7 +511,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 
 	}
@@ -571,7 +571,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 
 		}
 
@@ -610,7 +610,7 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
 		}
 
 	}

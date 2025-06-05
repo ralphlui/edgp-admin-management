@@ -48,7 +48,7 @@ public class UserInvitationService implements IUserInvitationService {
 			invitation.setEmail(userReq.getEmail());
 			invitation.setRoleName(userReq.getRole());
 			invitation.setToken(token);
-			invitation.setExpiresAt(LocalDateTime.now().plusHours(24));
+			invitation.setExpiresAt(LocalDateTime.now().plusHours(72));
 			invitation.setUsed(false);
 			invitation.setInvitedDate(LocalDateTime.now());
 

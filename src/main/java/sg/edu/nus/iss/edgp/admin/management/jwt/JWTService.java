@@ -184,7 +184,7 @@ public class JWTService {
 		
 		long tokenValidDuration;
 		
-		List<String> scopesFromDb = permissionService.findPermissionByRole(userDTO.getRole().getRoleName());
+		List<String> scopesFromDb = permissionService.findScopesByRole(userDTO.getRole().getRoleName());
 		Set<String> scopes = new HashSet<>(scopesFromDb);
 	    
 	    // Check if pentest is enabled and adjust token validity to 30 minutes

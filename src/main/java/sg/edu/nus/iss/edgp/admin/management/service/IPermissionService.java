@@ -11,5 +11,5 @@ public interface IPermissionService {
 
 	List<PermissionDTO> findPermission();
 	
-	List<String>findPermissionByRole(String roleId);
+	List<String>findScopesByRole(String roleId);
 }

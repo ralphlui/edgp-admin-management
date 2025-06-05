@@ -50,17 +50,17 @@ public class PermissionService implements IPermissionService {
 	}
 
 	@Override
-	public List<String> findPermissionByRole(String roleName) {
-		List<String> permissionCodes = new ArrayList<String>();
+	public List<String> findScopesByRole(String roleName) {
+		List<String> scopes = new ArrayList<String>();
 		try {
 			Role role = roleRepository.findByRoleName(roleName);
 
 			if (role != null) {
 
-				permissionCodes = permissionRepository.findPermissionCodesByRoleId(role.getRoleId());
+				scopes = permissionRepository.findScopesByRoleId(role.getRoleId());
 			}
 
-			return permissionCodes;
+			return scopes;
 		} catch (Exception ex) {
 			logger.error("findPermissionByRole exception... {}", ex.toString());
 			throw ex;

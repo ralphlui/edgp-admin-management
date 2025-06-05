@@ -33,7 +33,7 @@ public class DTOMapper {
 	
 	public static PermissionDTO toPermissionDTO(Permission permission) {
 		PermissionDTO permissionDTO = new PermissionDTO();
-		permissionDTO.setPermissionCode(permission.getPermissionCode());
+		permissionDTO.setScope(permission.getScope());
 		permissionDTO.setFieldsName(permission.getFieldsName());
 		permissionDTO.setModuleName(permission.getModuleName());
 		permissionDTO.setSectionName(permission.getSectionName());

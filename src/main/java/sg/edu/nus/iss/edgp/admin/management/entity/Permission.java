@@ -34,7 +34,7 @@ public class Permission {
 	private Role role;
 	
 	@Column(nullable = false)
-	private String permissionCode;
+	private String scope;
 	
 	@Column(nullable = false)
 	private String moduleName;
