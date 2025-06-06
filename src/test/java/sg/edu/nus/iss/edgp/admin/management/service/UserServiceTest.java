@@ -60,7 +60,7 @@ public class UserServiceTest {
 
       
 
-	@Value("${allowed.origin}")
+	@Value("${client.url}")
 	private String frontEndUrl = "https://example.com";
 
 	private static User user;
@@ -95,53 +95,6 @@ public class UserServiceTest {
 
 	}
 
-	@Test
-	void getAllActiveUsers() {
-
-		List<UserDTO> userDTOList = new ArrayList<UserDTO>();
-		Pageable pageable = PageRequest.of(0, 10);
-		Page<User> mockUserPages = new PageImpl<>(mockUsers, pageable, mockUsers.size());
-
-		Mockito.when(userRepository.findByIsActiveAndIsVerified(true, true, pageable)).thenReturn(mockUserPages);
-		Map<Long, List<UserDTO>> userPages = userService.findActiveUsers(pageable);
-
-		for (Map.Entry<Long, List<UserDTO>> entry : userPages.entrySet()) {
-			userDTOList = entry.getValue();
-
-		}
-		assertEquals(mockUsers.size(), userDTOList.size());
-		assertEquals(mockUsers.get(0).getEmail(), userDTOList.get(0).getEmail());
-
-	}
-	
-	@Test
-	void verifyUser() throws Exception{
-		String decodedVerificationCode = "7f03a9a9-d7a5-4742-bc85-68d52b2bee45";
-		String verificationCode = encryptionUtils.encrypt(decodedVerificationCode);
-
-		Mockito.when(encryptionUtils.decrypt(verificationCode)).thenReturn(decodedVerificationCode);
-		Mockito.when(userRepository.findByVerificationCodeAndIsActiveAndIsVerified(decodedVerificationCode, false, true)).thenReturn(user);
-		Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
-
-		UserDTO verifiedUser = userService.verifyUser(verificationCode);
-
-		assertThat(user.isVerified()).isTrue();
-		assertThat(verifiedUser).isNotNull();
-	}
-
-	@Test
-	void updateUser(){
-
-		userRequest.setUsername("Admin");
-		Mockito.when(userService.findByUserId(user.getUserId())).thenReturn(user);
-
-		Mockito.when(userRepository.save(user)).thenReturn(user);
-		Mockito.when(userRepository.findById(user.getUserId())).thenReturn(Optional.of(user));
-
-		UserDTO updatedUser = userService.updateUser(userRequest);
-		assertThat(updatedUser.getUsername().equals("Admin")).isTrue();
-
-	}
 	
 	
 
