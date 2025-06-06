@@ -12,20 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,8 +33,10 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.UserValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.CookieUtils;
+import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 
 @RestController
@@ -66,6 +59,7 @@ public class UserController {
 
 	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
+	private static final String ACCESS_TOKEN_COOKIE = "access_token";
 	private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
 
 	private static final String API_ENDPOINT = "api/admin/users";
@@ -76,8 +70,7 @@ public class UserController {
 	String activityTypePrefix;
 
 	@PostMapping(value = "", produces = "application/json")
-	public ResponseEntity<APIResponse<UserDTO>> createUser(
-			@RequestBody UserRequest userRequest) {
+	public ResponseEntity<APIResponse<UserDTO>> createUser(@RequestBody UserRequest userRequest) {
 		logger.info("Call user create API...");
 		String message;
 		String activityType = "Authentication-CreateUser";
@@ -88,7 +81,7 @@ public class UserController {
 				httpMethod);
 
 		try {
-			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest,"");
+			ValidationResult validationResult = userValidationStrategy.validateCreation(userRequest, "");
 
 			if (validationResult.isValid()) {
 
@@ -153,7 +146,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 	}
 
@@ -174,9 +168,10 @@ public class UserController {
 
 			if (validationResult.isValid()) {
 
-				UserInvitationDTO userInvitationDTO = userInvitationService.createInvitation(userRequest,authorizationHeader);
+				UserInvitationDTO userInvitationDTO = userInvitationService.createInvitation(userRequest,
+						authorizationHeader);
 				if (userInvitationDTO != null) {
-					
+
 					message = userRequest.getEmail() + " is invited successfully";
 					auditService.logAudit(auditDTO, 200, message, authorizationHeader);
 					return ResponseEntity.ok(APIResponse.success(userInvitationDTO, message));
@@ -205,7 +200,7 @@ public class UserController {
 		}
 
 	}
-	
+
 	@PostMapping(value = "/complete-registration", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> completeRegistration(
 			@RequestHeader("Authorization") String authorizationHeader, @RequestBody UserRequest userRequest) {
@@ -224,55 +219,49 @@ public class UserController {
 		try {
 
 			if (!token.isEmpty()) {
-		        
 
-		        UserInvitation invitation = userInvitationService.findByToken(token);
+				UserInvitation invitation = userInvitationService.findByToken(token);
 
-		        if (invitation.isUsed() || invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-		            
-		        	message = "Token has expired or already been used.";
+				if (invitation.isUsed() || invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+					message = "Token has expired or already been used.";
 					auditService.logAudit(auditDTO, 403, message, authorizationHeader);
-					return ResponseEntity.status(HttpStatus.FORBIDDEN)
-							.body(APIResponse.error(message));
-		        	
-		        }
-		        
-		        ValidationResult validationResult = userValidationStrategy.validateObject(userRequest.getEmail());
+					return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.error(message));
 
+				}
 
-		        if (validationResult.isValid()) {
-		        	
-		        	message = "User already exists.";
+				ValidationResult validationResult = userValidationStrategy.validateObject(userRequest.getEmail());
+
+				if (validationResult.isValid()) {
+
+					message = "User already exists.";
 					auditService.logAudit(auditDTO, 409, message, authorizationHeader);
-					return ResponseEntity.status(HttpStatus.CONFLICT)
-							.body(APIResponse.error(message)); 
-		        }
-			
-				
-				UserDTO activatedUser = userService.accountActivate(userRequest);
-				if(activatedUser !=null) {
-					UserInvitationDTO userInvitationDTO =userInvitationService.updateInvitation(userRequest);
-					 
-						message = "Password set successfully. Account activated.";
-						auditService.logAudit(auditDTO, 200, message, "");
+					return ResponseEntity.status(HttpStatus.CONFLICT).body(APIResponse.error(message));
+				}
 
-						return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(activatedUser, message));
-					
-				}else {
+				UserDTO activatedUser = userService.accountActivate(userRequest);
+				if (activatedUser != null) {
+					UserInvitationDTO userInvitationDTO = userInvitationService.updateInvitation(userRequest);
+
+					message = "Password set successfully. Account activated.";
+					auditService.logAudit(auditDTO, 200, message, "");
+
+					return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(activatedUser, message));
+
+				} else {
 					message = "Failed to set password.";
 					logger.error(message);
-					 
+
 					auditService.logAudit(auditDTO, 500, message, "");
 					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 
 				}
-				
 
 			} else {
 
 				message = "Token could not be blank.";
 				logger.error(message);
-				 
+
 				auditService.logAudit(auditDTO, 400, message, "");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
@@ -281,7 +270,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 
 	}
@@ -296,12 +286,12 @@ public class UserController {
 		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Retreving active user list is failed due to ";
-		
+
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
 				httpMethod);
 
 		try {
- 
+
 			Pageable pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize(),
 					Sort.by("username").ascending());
 			Map<Long, List<UserDTO>> resultMap = userService.findActiveUsers(pageable);
@@ -331,7 +321,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 
 		}
 	}
@@ -373,7 +364,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 
 	}
@@ -414,7 +406,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 	}
 
@@ -452,7 +445,8 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 	}
 
@@ -461,7 +455,7 @@ public class UserController {
 
 		String message = "";
 		String activityType = "Authentication-AccessToken";
-		String endpoint = API_ENDPOINT+"/accessToken";
+		String endpoint = API_ENDPOINT + "/accessToken";
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Requesting new access token is failed due to ";
 
@@ -511,19 +505,19 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 		}
 
 	}
-	
-	 
-	@GetMapping(value = "/refreshToken", produces = "application/json")
+
+	@PostMapping(value = "/refreshToken", produces = "application/json")
 	public <T> ResponseEntity<APIResponse<T>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-		 
+
 		String refreshToken = cookieUtils.getTokenFromCookies(request, REFRESH_TOKEN_COOKIE).orElse(null);
 		String message = "";
 		String activityType = "Authentication-RefreshToken";
-		String endpoint = API_ENDPOINT+"/refreshToken";
+		String endpoint = API_ENDPOINT + "/refreshToken";
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Requesting new access token is failed due to ";
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
@@ -533,34 +527,34 @@ public class UserController {
 			if (refreshToken == null) {
 				message = "Refresh token is missing";
 				logger.info("Requesting new access Token: {}", message);
-				 
+
 				auditService.logAudit(auditDTO, 400, message, "");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
 			}
-			
+
 			RefreshToken savedRefreshToken = refreshTokenService.findRefreshToken(refreshToken);
 
 			if (savedRefreshToken != null && refreshTokenService.verifyRefreshToken(savedRefreshToken)) {
 				UserDTO userDTO = new UserDTO();
-				userDTO.setUserID( savedRefreshToken.getUser().getUserId());
+				userDTO.setUserID(savedRefreshToken.getUser().getUserId());
 				userDTO.setUsername(savedRefreshToken.getUser().getUsername());
 				userDTO.setEmail(savedRefreshToken.getUser().getEmail());
 				User user = userService.findByUserIdAndStatus(savedRefreshToken.getUser().getUserId(), true, true);
 				userDTO.setRole(user.getRole());
-				 
+
 				HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO, refreshToken);
 
 				message = "Token refresh is successful.";
 
 				refreshTokenService.updateRefreshToken(refreshToken, false);
-				
+
 				auditService.logAudit(auditDTO, 200, message, "");
-				return ResponseEntity.status(HttpStatus.OK).headers(headers).body(APIResponse.successWithNoData(message));
-		
+				return ResponseEntity.status(HttpStatus.OK).headers(headers)
+						.body(APIResponse.successWithNoData(message));
 
 			} else {
-				
+
 				message = "Invalid or expired refresh token";
 				logger.info("Requesting refresh Token: {} ", message);
 				auditService.logAudit(auditDTO, 401, message, "");
@@ -571,23 +565,23 @@ public class UserController {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
 
 		}
 
 	}
-	
+
 	@PatchMapping(value = "/resetPassword", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> resetPassword(@RequestBody UserRequest resetPwdReq) {
 
 		logger.info("Call user resetPassword API...");
 
 		String activityType = "Authentication-ResetPassword";
-		String endpoint = API_ENDPOINT +"/resetPassword";
+		String endpoint = API_ENDPOINT + "/resetPassword";
 		HTTPVerb httpMethod = HTTPVerb.PATCH;
 		String message = "Reset password is failed due to ";
 
-		
 		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
 				httpMethod);
 		try {
@@ -595,22 +589,75 @@ public class UserController {
 			if (!validationResult.isValid()) {
 				logger.error("Reset passwrod validation is not successful");
 				auditService.logAudit(auditDTO, 400, message, "");
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(validationResult.getMessage()));
-				
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(APIResponse.error(validationResult.getMessage()));
+
 			}
 
 			UserDTO userDTO = userService.resetPassword(resetPwdReq.getEmail(), resetPwdReq.getPassword());
 			message = "Reset Password is completed.";
-			
-            auditService.logAudit(auditDTO, 200, message, "");
+
+			auditService.logAudit(auditDTO, 200, message, "");
 			return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
-			
 
 		} catch (Exception e) {
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message+e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
+		}
+
+	}
+
+	@PostMapping(value = "/logout", produces = "application/json")
+	public ResponseEntity<APIResponse<UserDTO>> lgoutUser(HttpServletRequest request) {
+		logger.info("Call user update Preferences API...");
+		String message;
+		String activityType = "Authentication-Logout";
+		String endpoint = API_ENDPOINT + "/logout";
+		HTTPVerb httpMethod = HTTPVerb.POST;
+		message = "Logging out user is failed due to ";
+		String userID = AuditLogInvalidUser.INVALID_USER_ID.toString();
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
+		String tokenFromCookie = cookieUtils.getTokenFromCookies(request, ACCESS_TOKEN_COOKIE).orElse(null);
+
+		ResponseCookie accessTokenCookie = cookieUtils.createCookie(ACCESS_TOKEN_COOKIE, "", true, 0);
+		ResponseCookie refreshTokenCookie = cookieUtils.createCookie(REFRESH_TOKEN_COOKIE, "", true, 0);
+		HttpHeaders headers = cookieUtils.createHttpHeader(accessTokenCookie, refreshTokenCookie);
+
+		try {
+			userID = jwtService.extractUserIdAllowExpiredToken(tokenFromCookie);
+			User user = userService.findByUserId(userID);
+
+			String refreshToken = cookieUtils.getTokenFromCookies(request, REFRESH_TOKEN_COOKIE).orElse(null);
+
+			refreshTokenService.updateRefreshToken(refreshToken, true);
+
+			if (user != null) {
+
+				message = "User logout successfully";
+
+				auditService.logAudit(auditDTO, 200, message, "");
+				return ResponseEntity.status(HttpStatus.OK).headers(headers)
+						.body(APIResponse.success(DTOMapper.toUserDTO(user), message));
+			} else {
+				message = "User not found, session cleared.";
+				logger.error(message);
+				auditService.logAudit(auditDTO, 404, message, tokenFromCookie);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(message));
+
+			}
+		} catch (Exception e) {
+			message = e.getMessage();
+			String responseMessage = e instanceof UserNotFoundException ? e.getMessage() : UNEXPECTED_ERROR;
+			logger.error(responseMessage);
+			logger.error(LOG_MESSAGE_FORMAT, responseMessage, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, responseMessage, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(responseMessage));
 		}
 
 	}
