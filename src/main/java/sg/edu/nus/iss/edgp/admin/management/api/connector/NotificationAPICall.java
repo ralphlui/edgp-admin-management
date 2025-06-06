@@ -36,14 +36,18 @@ public class NotificationAPICall {
 		String responseStr = "";
 
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-			String url = notificationURL.trim() + "/set-password-request";
+			String url = notificationURL.trim() + "/invitation-user";
 			logger.info("getSpeicficActiveUsers url : " + url);
 
 			HttpPost request = new HttpPost(url);
 			request.setHeader("Authorization", authorizationHeader);
 			request.setHeader("Content-Type", "application/json");
 
-			String jsonBody = "{\n" + "  \"userEmail\": \"" + userInvitation.getEmail() + "\"\n" + "}\n" + "}";
+			String jsonBody = "{\n"
+					+ "  \"userEmail\": \""+userInvitation.getEmail().trim()+"\",\n"
+					+ "  \"token\":\""+userInvitation.getToken().trim()+"\"\n"
+					+ "}\n"
+					+ "";
 			request.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 
 			CloseableHttpResponse httpResponse = httpClient.execute(request);
