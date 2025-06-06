@@ -289,7 +289,7 @@ public class UserService implements IUserService{
 				user.setVerified(true);
 				String code = UUID.randomUUID().toString();
 				user.setVerificationCode(code);
-				Role role = roleRepository.findByRoleName(userInvitation.get().getRoleName());
+				Role role = roleRepository.findByRoleName(userInvitation.get().getRole().getRoleName());
 				user.setRole(role);
 				
 				user.setCreatedDate(LocalDateTime.now());

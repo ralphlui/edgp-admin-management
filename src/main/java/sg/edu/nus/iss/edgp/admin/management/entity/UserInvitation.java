@@ -4,9 +4,12 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,8 +29,9 @@ public class UserInvitation {
 		@Column(nullable = false)
 		private String email;
 		
-		@Column(nullable = false)
-		private String roleName;
+		@ManyToOne(cascade = CascadeType.ALL)
+		@JoinColumn(name = "roleId")
+		private Role role;
 		
 		@Column(nullable = false)
 		private String token;

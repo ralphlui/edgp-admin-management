@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
 
+import javax.management.relation.RoleNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +14,11 @@ import org.springframework.stereotype.Service;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.UserInvitationDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
+import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
@@ -27,6 +31,9 @@ public class UserInvitationService implements IUserInvitationService {
 
 	@Autowired
 	private UserInvitationRepository userInvitationRepository;
+	
+	@Autowired
+	private RoleRepository roleRepository;
 	
 	@Autowired
 	private JSONReader jsonReader;
@@ -46,7 +53,12 @@ public class UserInvitationService implements IUserInvitationService {
 
 			UserInvitation invitation = new UserInvitation();
 			invitation.setEmail(userReq.getEmail());
-			invitation.setRoleName(userReq.getRole());
+			Role role = roleRepository.findByRoleName(userReq.getRole());
+			
+			if (role== null) {
+				throw new RoleNotFoundException("User Invitation info not found.");
+			}
+			invitation.setRole(role);
 			invitation.setToken(token);
 			invitation.setExpiresAt(LocalDateTime.now().plusHours(72));
 			invitation.setUsed(false);

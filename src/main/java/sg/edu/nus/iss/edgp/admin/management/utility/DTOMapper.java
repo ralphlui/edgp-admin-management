@@ -45,7 +45,7 @@ public class DTOMapper {
 	public static UserInvitationDTO toUserInvitationDTO(UserInvitation userInvitation) {
 		UserInvitationDTO userInvitationDTO = new UserInvitationDTO();
 		userInvitationDTO.setEmail(userInvitation.getEmail());
-		userInvitationDTO.setRoleName(userInvitation.getRoleName());
+		userInvitationDTO.setRoleName(userInvitation.getRole().getRoleName());
 		return userInvitationDTO;
 				
 	}
