@@ -11,7 +11,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.UserOrganization;
 @Repository
 public interface UserOrganizationRepository extends JpaRepository<UserOrganization, String> {
 
-	List<UserOrganization> findByUser_UserId(String userId);
+	UserOrganization findByUser_UserIdAndRole_RoleId(String userId,String roleId);
 
 	Optional<UserOrganization> findByUser_UserIdAndOrganizationId(String userId, String orgId);
 

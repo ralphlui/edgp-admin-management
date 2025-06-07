@@ -22,7 +22,9 @@ import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
+import sg.edu.nus.iss.edgp.admin.management.entity.UserOrganization;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
+import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 
@@ -49,6 +51,7 @@ public class JWTService {
 	private final JWTConfig jwtConfig;
 	private final ApplicationContext context;
 	private final PermissionService permissionService;
+	private final UserOrganizationRepository userOrganizationRepository;
 
 	public static final String USER_EMAIL = "userEmail";
 	public static final String CLAIM_USERNAME = "userName";
@@ -197,13 +200,14 @@ public class JWTService {
 	    	tokenValidDuration = System.currentTimeMillis() +  15 * 60 * 1000;
 	    }
 	    
-	    //Get Organization Id by role.
-
+	    //Get Organization Id by user and role.
+	    UserOrganization userOrg= userOrganizationRepository.findByUser_UserIdAndRole_RoleId(userDTO.getUserID(),userDTO.getRole().getRoleId() );
 		
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("userEmail", userDTO.getEmail());
 		claims.put(CLAIM_USERNAME, userDTO.getUsername());
 		claims.put("scope", String.join(" ", scopes));
+		claims.put("orgId",  userOrg.getOrganizationId());
 		return Jwts.builder().claims().add(claims).subject(userDTO.getUserID()).issuedAt(new Date(System.currentTimeMillis()))
 				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
 	}
