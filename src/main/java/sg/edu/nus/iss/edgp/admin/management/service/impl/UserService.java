@@ -79,7 +79,7 @@ public class UserService implements IUserService{
 			if (createdUser == null) {
 				throw new Exception("User registration is not successful");
 			}
-			String a="";
+			
 			//save to user-org-role mapping
 			UserOrganization userOrg = new UserOrganization();
 			userOrg.setUser(createdUser);
