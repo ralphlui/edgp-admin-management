@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.api.connector.NotificationAPICall;
+import sg.edu.nus.iss.edgp.admin.management.api.connector.OrganizationAPICall;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 
@@ -18,8 +19,9 @@ public class JSONReader {
 
 	private static final Logger logger = LoggerFactory.getLogger(JSONReader.class);
 	
-	private final NotificationAPICall apiCall;
-
+	private final NotificationAPICall notiAPICall;
+	private final OrganizationAPICall orgAPICall;
+	
 	public JSONObject parseJsonResponse(String responseStr) throws ParseException {
 		if (responseStr == null || responseStr.isEmpty()) {
 			return null;
@@ -53,7 +55,7 @@ public class JSONReader {
 
 		JSONObject jsonResponse = new JSONObject();
 
-		String responseStr = apiCall.sendUserInviteEmail(userInvitation, authorizationHeader);
+		String responseStr = notiAPICall.sendUserInviteEmail(userInvitation, authorizationHeader);
 
 		try {
 
@@ -70,5 +72,29 @@ public class JSONReader {
 		return jsonResponse;
 	}
 
+	
+	
+	public JSONObject getOrganization(String orgId, String authorizationHeader) {
+
+		JSONObject jsonResponse = new JSONObject();
+
+		String responseStr = orgAPICall.getOrganization(orgId, authorizationHeader);
+
+		try {
+
+			JSONParser parser = new JSONParser();
+			jsonResponse = (JSONObject) parser.parse(responseStr);
+			return jsonResponse;
+
+		} catch (ParseException e) {
+			
+			logger.error("Error parsing JSON response for getOrganization... {}", e.toString());
+
+		}
+
+		return jsonResponse;
+	}
+	
+	
 
 }

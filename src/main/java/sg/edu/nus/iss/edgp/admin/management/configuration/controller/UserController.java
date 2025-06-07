@@ -86,6 +86,12 @@ public class UserController {
 			if (validationResult.isValid()) {
 
 				UserDTO userDTO = userService.createUser(userRequest);
+				if(userDTO == null) {
+					message = "User creation is not successful";
+					auditService.logAudit(auditDTO, 500, message, "");
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+							.body(APIResponse.error(validationResult.getMessage()));
+				}
 				message = userRequest.getEmail() + " is created successfully";
 				auditService.logAudit(auditDTO, 200, message, "");
 				return ResponseEntity.ok(APIResponse.success(userDTO, message));
@@ -131,6 +137,14 @@ public class UserController {
 
 				userRequest.setUserId(userID);
 				UserDTO userDTO = userService.updateUser(userRequest);
+				
+				if(userDTO == null) {
+					message = "User updating is not successful";
+					auditService.logAudit(auditDTO, 500, message, "");
+					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+							.body(APIResponse.error(validationResult.getMessage()));
+				}
+				
 				message = "User updated successfully.";
 				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
 				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));

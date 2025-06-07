@@ -3,12 +3,8 @@ package sg.edu.nus.iss.edgp.admin.management.configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 @Configuration
 public class AWSConfig {
@@ -43,21 +39,10 @@ public class AWSConfig {
 	@Bean
 	public String getSQSUrl() {
 		return sqsURL;
-	}
-	
-	
-	@Bean
-	public AWSCredentials awsCredentials() {
-		return new BasicAWSCredentials(awsAccessKey, awsSecretKey);
-	}
-	
-	
-	@Bean
-    public AmazonSQS amazonSQSClient(AWSCredentials awsCredentials) {
-        return AmazonSQSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .withRegion(awsRegion)
-                .build();
-    }
+	}		
 
+	@Bean
+	public SqsClient sqsClient() {
+		return SqsClient.builder().region(Region.AP_SOUTHEAST_1).build();
+	}
 }

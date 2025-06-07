@@ -18,6 +18,7 @@ public class UserRequest {
 	private String password;
 	private Boolean active;
 	private String role;
+	private String organizationId;
 	private String accountVerificationCode; 
     private String otp;
     private String userInvitationtoken;

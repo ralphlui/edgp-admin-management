@@ -23,11 +23,13 @@ import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
+import sg.edu.nus.iss.edgp.admin.management.entity.UserOrganization;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
+import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
@@ -42,6 +44,7 @@ public class UserService implements IUserService{
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final UserInvitationRepository userInvitationRepository;
+	private final UserOrganizationRepository userOrganizationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
 	private final EncryptionUtils encryptionUtils;
@@ -76,6 +79,21 @@ public class UserService implements IUserService{
 			if (createdUser == null) {
 				throw new Exception("User registration is not successful");
 			}
+			
+			//save to user-org-role mapping
+			UserOrganization userOrg = new UserOrganization();
+			userOrg.setUser(createdUser);
+			userOrg.setOrganizationId(userReq.getOrganizationId());
+			userOrg.setRole(role);
+			userOrg.setActive(true);
+			userOrg.setCreatedDate(LocalDateTime.now());
+			
+			UserOrganization dbUserOrganization = userOrganizationRepository.save(userOrg);
+			
+			if (dbUserOrganization == null) {
+				throw new Exception("Invalid Organization,User registration is not successful");
+			}
+			
 			logger.info("User registration is successful.");
 			//sendVerificationEmail 
 			
@@ -101,6 +119,10 @@ public class UserService implements IUserService{
 			dbUser.setPassword(passwordEncoder.encode(userReq.getPassword()));
 			dbUser.setActive(userReq.getActive());
 			dbUser.setUpdatedDate(LocalDateTime.now());
+			Role role = roleRepository.findByRoleName(userReq.getRole());
+			dbUser.setRole(role);
+			
+			
 			logger.info("Update User...");
 			User updateUser = userRepository.save(dbUser);
 			logger.info("User update is successful");

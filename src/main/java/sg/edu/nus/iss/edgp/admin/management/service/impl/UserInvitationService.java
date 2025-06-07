@@ -9,34 +9,30 @@ import javax.management.relation.RoleNotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserInvitationDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
-import sg.edu.nus.iss.edgp.admin.management.entity.Role;
-import sg.edu.nus.iss.edgp.admin.management.entity.User;
-import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
+import sg.edu.nus.iss.edgp.admin.management.entity.*;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
-import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
-import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
+import sg.edu.nus.iss.edgp.admin.management.repository.*;
 import sg.edu.nus.iss.edgp.admin.management.service.IUserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.JSONReader;
 
+@RequiredArgsConstructor
 @Service
 public class UserInvitationService implements IUserInvitationService {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserInvitationService.class);
 
-	@Autowired
-	private UserInvitationRepository userInvitationRepository;
 	
-	@Autowired
-	private RoleRepository roleRepository;
-	
-	@Autowired
-	private JSONReader jsonReader;
+	private final UserInvitationRepository userInvitationRepository;
+    private final RoleRepository roleRepository; 
+	private final JSONReader jsonReader;
+	private final UserRepository userRepository;
+	private final UserOrganizationRepository userOrganizationRepository;
 
 	@Override
 	public String generateSecureToken() {
@@ -68,6 +64,24 @@ public class UserInvitationService implements IUserInvitationService {
 			if (dbInvitation == null) {
 				throw new Exception("User invitation is not successful");
 			}
+			
+			//save to user-org-role mapping
+			User dbUser = userRepository.findByEmail(userReq.getEmail().trim());
+			UserOrganization userOrg = new UserOrganization();
+			userOrg.setUser(dbUser);
+			userOrg.setOrganizationId(userReq.getOrganizationId());
+			userOrg.setRole(role);
+			userOrg.setActive(true);
+			userOrg.setCreatedDate(LocalDateTime.now());
+			
+			
+			UserOrganization dbUserOrganization = userOrganizationRepository.save(userOrg);
+			
+			if (dbUserOrganization == null) {
+				throw new Exception("Invalid Organization,User invitation is not successful");
+			}
+			
+			
 			//send email
 			jsonReader.sendUserInviteEmail(dbInvitation, authorizationHeader);
 			//

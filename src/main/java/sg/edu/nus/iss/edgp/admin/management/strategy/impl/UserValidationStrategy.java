@@ -1,37 +1,36 @@
 package sg.edu.nus.iss.edgp.admin.management.strategy.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
-import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PasswordValidatorService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
+import sg.edu.nus.iss.edgp.admin.management.utility.JSONReader;
 
-
+@RequiredArgsConstructor
 @Service
 public class UserValidationStrategy implements IAPIHelperValidationStrategy <UserRequest>{
 
-	@Autowired
-	UserService userService;
+	private final UserService userService;
 	
-	@Autowired
-	UserInvitationService userInvitationService;
+	private final UserInvitationService userInvitationService;
 	
-	@Autowired
-	PasswordValidatorService passwordValidatorService;
+	private final PasswordValidatorService passwordValidatorService;
 	
-	@Autowired
-	RoleService roleService;
+	private final RoleService roleService;
+	private final JSONReader jsonReader;
+	
 
 	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
@@ -88,6 +87,33 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			return validationResult;
 		}
 		}
+		
+		if (userReq.getOrganizationId() == null || userReq.getOrganizationId().isEmpty()) {
+			String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+					: INVALID_USER_NAME;
+			validationResult.setMessage("Organization cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(INVALID_USER_ID);
+			validationResult.setUserName(userName);
+			return validationResult;
+		}else {
+			if(header != null && !header.equals("")) {
+			JSONObject jsonResponse  = jsonReader.getOrganization(userReq.getOrganizationId(), header);
+			Boolean getSuccessFromResponse =jsonReader.getSuccessFromResponse(jsonResponse);
+			if(!getSuccessFromResponse) {
+				String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+						: INVALID_USER_NAME;
+				validationResult.setMessage("Organization is not valid.");
+				validationResult.setStatus(HttpStatus.BAD_REQUEST);
+				validationResult.setValid(false);
+				validationResult.setUserId(INVALID_USER_ID);
+				validationResult.setUserName(userName);
+				return validationResult;
+			}
+			}
+			
+		}
 
 		validationResult.setValid(true);
 		return validationResult;
@@ -110,6 +136,24 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 		if (!validationObjResult.isValid()) {
 			return validationObjResult;
 		}
+		
+		if (user.getRole() == null || user.getRole().isEmpty()) {
+			validationResult.setMessage("Role cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}else {
+		
+		RoleDTO roleDTO = roleService.findByRoleName(user.getRole());
+
+		if (roleDTO == null || roleDTO.getRoleId() == null || roleDTO.getRoleId().isEmpty()) {
+			validationResult.setMessage("Invalid role: " + user.getRole());
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
+		}
+		}
+		
 
 		validationResult.setValid(true);
 		return validationResult;
@@ -269,6 +313,34 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			validationResult.setValid(false);
 			return validationResult;
 		}
+		}
+		
+
+		if (userReq.getOrganizationId() == null || userReq.getOrganizationId().isEmpty()) {
+			String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+					: INVALID_USER_NAME;
+			validationResult.setMessage("Organization cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(INVALID_USER_ID);
+			validationResult.setUserName(userName);
+			return validationResult;
+		}else {
+			if(header != null && !header.equals("")) {
+			JSONObject jsonResponse  = jsonReader.getOrganization(userReq.getOrganizationId(), header);
+			Boolean getSuccessFromResponse =jsonReader.getSuccessFromResponse(jsonResponse);
+			if(!getSuccessFromResponse) {
+				String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+						: INVALID_USER_NAME;
+				validationResult.setMessage("Organization is not valid.");
+				validationResult.setStatus(HttpStatus.BAD_REQUEST);
+				validationResult.setValid(false);
+				validationResult.setUserId(INVALID_USER_ID);
+				validationResult.setUserName(userName);
+				return validationResult;
+			}
+			}
+			
 		}
 
 		validationResult.setValid(true);
