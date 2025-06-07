@@ -45,5 +45,8 @@ public class UserOrganization {
 
 	@Column(nullable = false, columnDefinition = "datetime default now()")
 	private LocalDateTime createdDate = LocalDateTime.now();
+	
+	@Column(nullable = true)
+	private String createdBy;
 
 }
