@@ -13,7 +13,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
 
 	List<UserOrganization> findByUser_UserId(String userId);
 
-	Optional<UserOrganization> findByUser_UserIdAndOrgId(String userId, String orgId);
+	Optional<UserOrganization> findByUser_UserIdAndOrganizationId(String userId, String orgId);
 
 
 }

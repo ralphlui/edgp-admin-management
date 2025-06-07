@@ -34,7 +34,7 @@ public class UserOrganization {
 	private User user;
 
 	@Column(nullable = false)
-	private String orgId;
+	private String organizationId;
 
 	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "roleId")

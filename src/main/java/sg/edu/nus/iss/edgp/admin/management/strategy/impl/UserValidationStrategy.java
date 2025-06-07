@@ -88,6 +88,17 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			return validationResult;
 		}
 		}
+		
+		if (userReq.getOrganizationId() == null || userReq.getOrganizationId().isEmpty()) {
+			String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
+					: INVALID_USER_NAME;
+			validationResult.setMessage("Organization cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(INVALID_USER_ID);
+			validationResult.setUserName(userName);
+			return validationResult;
+		}
 
 		validationResult.setValid(true);
 		return validationResult;
@@ -109,6 +120,17 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 		ValidationResult validationObjResult = validateObjectByUserId(user,true);
 		if (!validationObjResult.isValid()) {
 			return validationObjResult;
+		}
+		
+		if (user.getOrganizationId() == null || user.getOrganizationId().isEmpty()) {
+			String userName = StringUtils.hasText(user.getUsername()) ? user.getUsername()
+					: INVALID_USER_NAME;
+			validationResult.setMessage("Organization cannot be empty.");
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			validationResult.setUserId(INVALID_USER_ID);
+			validationResult.setUserName(userName);
+			return validationResult;
 		}
 
 		validationResult.setValid(true);
