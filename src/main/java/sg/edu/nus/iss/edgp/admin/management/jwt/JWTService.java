@@ -196,6 +196,8 @@ public class JWTService {
 	    } else {
 	    	tokenValidDuration = System.currentTimeMillis() +  15 * 60 * 1000;
 	    }
+	    
+	    //Get Organization Id by role.
 
 		
 		Map<String, Object> claims = new HashMap<>();
