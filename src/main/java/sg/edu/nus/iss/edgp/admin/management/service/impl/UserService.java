@@ -119,6 +119,10 @@ public class UserService implements IUserService{
 			dbUser.setPassword(passwordEncoder.encode(userReq.getPassword()));
 			dbUser.setActive(userReq.getActive());
 			dbUser.setUpdatedDate(LocalDateTime.now());
+			Role role = roleRepository.findByRoleName(userReq.getRole());
+			dbUser.setRole(role);
+			
+			
 			logger.info("Update User...");
 			User updateUser = userRepository.save(dbUser);
 			logger.info("User update is successful");

@@ -137,32 +137,23 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			return validationObjResult;
 		}
 		
-		if (user.getOrganizationId() == null || user.getOrganizationId().isEmpty()) {
-			String userName = StringUtils.hasText(user.getUsername()) ? user.getUsername()
-					: INVALID_USER_NAME;
-			validationResult.setMessage("Organization cannot be empty.");
+		if (user.getRole() == null || user.getRole().isEmpty()) {
+			validationResult.setMessage("Role cannot be empty.");
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);
 			validationResult.setValid(false);
-			validationResult.setUserId(INVALID_USER_ID);
-			validationResult.setUserName(userName);
 			return validationResult;
 		}else {
-			if(header != null && !header.equals("")) {
-			JSONObject jsonResponse  = jsonReader.getOrganization(user.getOrganizationId(), header);
-			Boolean getSuccessFromResponse =jsonReader.getSuccessFromResponse(jsonResponse);
-			if(!getSuccessFromResponse) {
-				String userName = StringUtils.hasText(user.getUsername()) ? user.getUsername()
-						: INVALID_USER_NAME;
-				validationResult.setMessage("Organization is not valid.");
-				validationResult.setStatus(HttpStatus.BAD_REQUEST);
-				validationResult.setValid(false);
-				validationResult.setUserId(INVALID_USER_ID);
-				validationResult.setUserName(userName);
-				return validationResult;
-			}
-			}
-			
+		
+		RoleDTO roleDTO = roleService.findByRoleName(user.getRole());
+
+		if (roleDTO == null || roleDTO.getRoleId() == null || roleDTO.getRoleId().isEmpty()) {
+			validationResult.setMessage("Invalid role: " + user.getRole());
+			validationResult.setStatus(HttpStatus.BAD_REQUEST);
+			validationResult.setValid(false);
+			return validationResult;
 		}
+		}
+		
 
 		validationResult.setValid(true);
 		return validationResult;
