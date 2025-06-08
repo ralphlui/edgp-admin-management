@@ -24,6 +24,7 @@ import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserOrganization;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
+import sg.edu.nus.iss.edgp.admin.management.repository.UserInvitationRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
@@ -52,6 +53,7 @@ public class JWTService {
 	private final ApplicationContext context;
 	private final PermissionService permissionService;
 	private final UserOrganizationRepository userOrganizationRepository;
+	private final UserInvitationRepository userInvitationRepository;
 
 	public static final String USER_EMAIL = "userEmail";
 	public static final String CLAIM_USERNAME = "userName";
@@ -200,14 +202,24 @@ public class JWTService {
 	    	tokenValidDuration = System.currentTimeMillis() +  15 * 60 * 1000;
 	    }
 	    
-	    //Get Organization Id by user and role.
-	    UserOrganization userOrg= userOrganizationRepository.findByUser_UserIdAndRole_RoleId(userDTO.getUserID(),userDTO.getRole().getRoleId() );
-		
+
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("userEmail", userDTO.getEmail());
 		claims.put(CLAIM_USERNAME, userDTO.getUsername());
 		claims.put("scope", String.join(" ", scopes));
-		claims.put("orgId",  userOrg.getOrganizationId());
+	   
+		 // Check if the user was created via the invitation flow,
+		 // which means the user is not a Platform Admin.
+		 // If yes, do not retrieve the organization.
+		 // If not, retrieve the associated organization.
+
+	    boolean  invitedUser=userInvitationRepository.existsByEmail(userDTO.getEmail().trim());
+        if(invitedUser) {
+        	 //Get Organization Id by user and role.
+    	    UserOrganization userOrg= userOrganizationRepository.findByUser_UserIdAndRole_RoleId(userDTO.getUserID(),userDTO.getRole().getRoleId() );
+    	    claims.put("orgId",  userOrg.getOrganizationId());
+        }	   
+		
 		return Jwts.builder().claims().add(claims).subject(userDTO.getUserID()).issuedAt(new Date(System.currentTimeMillis()))
 				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
 	}

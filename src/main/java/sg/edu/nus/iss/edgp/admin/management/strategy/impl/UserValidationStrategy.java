@@ -87,33 +87,6 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			return validationResult;
 		}
 		}
-		
-		if (userReq.getOrganizationId() == null || userReq.getOrganizationId().isEmpty()) {
-			String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
-					: INVALID_USER_NAME;
-			validationResult.setMessage("Organization cannot be empty.");
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			validationResult.setValid(false);
-			validationResult.setUserId(INVALID_USER_ID);
-			validationResult.setUserName(userName);
-			return validationResult;
-		}else {
-			if(header != null && !header.equals("")) {
-			JSONObject jsonResponse  = jsonReader.getOrganization(userReq.getOrganizationId(), header);
-			Boolean getSuccessFromResponse =jsonReader.getSuccessFromResponse(jsonResponse);
-			if(!getSuccessFromResponse) {
-				String userName = StringUtils.hasText(userReq.getUsername()) ? userReq.getUsername()
-						: INVALID_USER_NAME;
-				validationResult.setMessage("Organization is not valid.");
-				validationResult.setStatus(HttpStatus.BAD_REQUEST);
-				validationResult.setValid(false);
-				validationResult.setUserId(INVALID_USER_ID);
-				validationResult.setUserName(userName);
-				return validationResult;
-			}
-			}
-			
-		}
 
 		validationResult.setValid(true);
 		return validationResult;

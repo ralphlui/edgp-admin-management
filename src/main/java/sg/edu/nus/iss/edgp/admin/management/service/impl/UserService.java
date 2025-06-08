@@ -2,7 +2,6 @@ package sg.edu.nus.iss.edgp.admin.management.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class UserService implements IUserService{
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final UserInvitationRepository userInvitationRepository;
-	private final UserOrganizationRepository userOrganizationRepository;
+	
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
 	private final EncryptionUtils encryptionUtils;
@@ -78,20 +77,6 @@ public class UserService implements IUserService{
 			 
 			if (createdUser == null) {
 				throw new Exception("User registration is not successful");
-			}
-			
-			//save to user-org-role mapping
-			UserOrganization userOrg = new UserOrganization();
-			userOrg.setUser(createdUser);
-			userOrg.setOrganizationId(userReq.getOrganizationId());
-			userOrg.setRole(role);
-			userOrg.setActive(true);
-			userOrg.setCreatedDate(LocalDateTime.now());
-			
-			UserOrganization dbUserOrganization = userOrganizationRepository.save(userOrg);
-			
-			if (dbUserOrganization == null) {
-				throw new Exception("Invalid Organization,User registration is not successful");
 			}
 			
 			logger.info("User registration is successful.");

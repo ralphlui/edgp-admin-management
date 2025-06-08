@@ -51,12 +51,4 @@ public class Permission {
 	@Column(nullable = false, columnDefinition = "datetime default now()")
 	private LocalDateTime createdDate;
 	
-	@Column(nullable = true)
-	private String createdBy;
-
-	@Column(nullable = true, columnDefinition = "datetime")
-	private LocalDateTime updatedDate;
-	
-	@Column(nullable = true)
-	private String updatedBy;
 }
