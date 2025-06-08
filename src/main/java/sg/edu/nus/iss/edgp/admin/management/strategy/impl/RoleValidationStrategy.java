@@ -26,23 +26,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	@Override
 	public ValidationResult validateCreation(Role role, String authorizationHeader) {
 		ValidationResult validationResult = new ValidationResult();
-		String userId = GeneralUtility.makeNotNull(role.getCreatedBy());
-
-		if (userId.isEmpty()) {
-			validationResult.setMessage("Bad Request: CreatedBy field could not be blank.");
-			validationResult.setValid(false);
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			return validationResult;
-		}else {
-			User user = userService.findActiveUserByID(userId);
-			if(user == null) {
-				validationResult.setMessage("Bad Request: CreatedBy is not valid.");
-				validationResult.setValid(false);
-				validationResult.setStatus(HttpStatus.BAD_REQUEST);
-				return validationResult;
-			}
-		}
-
+		
 		 
 
 		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
@@ -93,7 +77,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 			return validationResult;
 
 		}
-
+		
 		validationResult.setValid(true);
 		return validationResult;
 	}

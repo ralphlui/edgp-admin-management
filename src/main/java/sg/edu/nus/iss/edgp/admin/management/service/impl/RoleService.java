@@ -10,25 +10,29 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IRoleService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
+@RequiredArgsConstructor
 @Service
 public class RoleService implements IRoleService {
 
 	private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
 
-	@Autowired
-	private RoleRepository roleRepository;
+	private final RoleRepository roleRepository;
+	private final JWTService jwtService;
 
 	@Override
 	public RoleDTO createRole(Role role) {
 		try {
 			role.setCreatedDate(LocalDateTime.now());
+			
 			logger.info("Saving Role...");
 			role.setStatus(true);
 			Role createdRole = roleRepository.save(role);
@@ -38,9 +42,8 @@ public class RoleService implements IRoleService {
 		} catch (Exception e) {
 			logger.error("Error occurred while role creating, " + e.toString());
 
-			throw e;
-
 		}
+		return null;
 	}
 
 	@Override
@@ -80,26 +83,28 @@ public class RoleService implements IRoleService {
 	}
 
 	@Override
-	public RoleDTO updateRole(Role role) {
-		RoleDTO roleDTO = new RoleDTO();
+	public RoleDTO updateRole(Role role , String authorizationHeader) {
+		
 		try {
+			RoleDTO roleDTO = new RoleDTO();
 			Optional<Role> dbRole = roleRepository.findById(role.getRoleId());
 			dbRole.get().setRoleName(GeneralUtility.makeNotNull(role.getRoleName()));
 			dbRole.get().setRoleDescription(GeneralUtility.makeNotNull(role.getRoleDescription()));
 			dbRole.get().setStatus(role.isStatus());
-			dbRole.get().setUpdatedBy(role.getUpdatedBy());
+			dbRole.get().setUpdatedBy(jwtService.getUserIdByAuthHeader(authorizationHeader));
 			dbRole.get().setUpdatedDate(LocalDateTime.now());
 			logger.info("Update role...");
 			Role savedRole = roleRepository.save(dbRole.get());
 			logger.info("Updated successfully...");
 			roleDTO = DTOMapper.toRoleDTO(savedRole);
+			return roleDTO;
 
 		} catch (Exception ex) {
 			logger.error("Role updating exception... {}", ex.toString());
 
 		}
 
-		return roleDTO;
+		return null;
 	}
 
 }

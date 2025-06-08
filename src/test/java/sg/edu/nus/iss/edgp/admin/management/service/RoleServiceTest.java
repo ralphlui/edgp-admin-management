@@ -101,7 +101,7 @@ class RoleServiceTest {
 		 
 		Mockito.when(roleRepository.findById(role1.getRoleId())).thenReturn(Optional.of(role1));
 		role1.setRoleDescription("test update");
-		RoleDTO roleDTO = roleService.updateRole(role1);
+		RoleDTO roleDTO = roleService.updateRole(role1,authorizationHeader);
 		assertEquals(roleDTO.getRoleDescription(), "test update");
 	}
 	
