@@ -36,6 +36,9 @@ public class UserInvitation {
 		@Column(nullable = false)
 		private String token;
 		
+		@Column(nullable = false)
+		private String organizationId;
+		
 		@Column(nullable = false, columnDefinition = "boolean default false")
 		private boolean used;
 		
