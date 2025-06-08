@@ -60,7 +60,7 @@ public class RoleController {
 	
 	
 	@PostMapping(value = "", produces = "application/json")
-	public ResponseEntity<APIResponse<RoleDTO>> createRole(@RequestHeader("Authorization") String authorizationHeader,
+	public ResponseEntity<APIResponse<RoleDTO>> createRole(
 			@RequestBody Role role) {
 
 		logger.info("Call role create API...");
@@ -73,17 +73,17 @@ public class RoleController {
 
 		try {
 			 
-			ValidationResult validationResult = roleValidationStrategy.validateCreation(role, authorizationHeader);
+			ValidationResult validationResult = roleValidationStrategy.validateCreation(role, "");
 
 			if (validationResult.isValid()) {
 				RoleDTO roleDTO = roleService.createRole(role);
 				message = roleDTO.getRoleName() + " is created successfully.";
-				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				auditService.logAudit(auditDTO, 200, message, "");
                 return ResponseEntity.ok(APIResponse.success(roleDTO, message));
                 
 
 			} else {
-				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), authorizationHeader);
+				auditService.logAudit(auditDTO, 404, validationResult.getMessage(), "");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(validationResult.getMessage()));
                
 			}
@@ -92,7 +92,7 @@ public class RoleController {
 			message = UNEXPECTED_ERROR;
 	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 	        auditDTO.setRemarks(e.getMessage());
-	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
+	        auditService.logAudit(auditDTO, 500, message, "");
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
 		}
 
@@ -120,7 +120,7 @@ public class RoleController {
 
 				ValidationResult validationResult = roleValidationStrategy.validateUpdating(role, authorizationHeader);
 				if (validationResult.isValid()) {
-					RoleDTO roleDTO = roleService.updateRole(role);
+					RoleDTO roleDTO = roleService.updateRole(role,authorizationHeader);
 					if (roleDTO != null && !roleDTO.getRoleId().isEmpty()) {
 						message = roleDTO.getRoleName() + " is updated successfully.";
 						auditService.logAudit(auditDTO, 200, message, authorizationHeader);

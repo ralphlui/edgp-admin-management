@@ -9,7 +9,7 @@ public interface IRoleService {
 	
 	RoleDTO createRole(Role role);
 	
-	RoleDTO updateRole(Role role);
+	RoleDTO updateRole(Role role,String authorizationHeader);
 	
 	List<RoleDTO> findByStatusTrue();
 	
