@@ -56,6 +56,7 @@ public class UserInvitationService implements IUserInvitationService {
 			}
 			invitation.setRole(role);
 			invitation.setToken(token);
+			invitation.setOrganizationId(userReq.getOrganizationId());
 			invitation.setExpiresAt(LocalDateTime.now().plusHours(72));
 			invitation.setUsed(false);
 			invitation.setInvitedDate(LocalDateTime.now());
@@ -63,24 +64,7 @@ public class UserInvitationService implements IUserInvitationService {
 			UserInvitation dbInvitation = userInvitationRepository.save(invitation);
 			if (dbInvitation == null) {
 				throw new Exception("User invitation is not successful");
-			}
-			
-			//save to user-org-role mapping
-			User dbUser = userRepository.findByEmail(userReq.getEmail().trim());
-			UserOrganization userOrg = new UserOrganization();
-			userOrg.setUser(dbUser);
-			userOrg.setOrganizationId(userReq.getOrganizationId());
-			userOrg.setRole(role);
-			userOrg.setActive(true);
-			userOrg.setCreatedDate(LocalDateTime.now());
-			
-			
-			UserOrganization dbUserOrganization = userOrganizationRepository.save(userOrg);
-			
-			if (dbUserOrganization == null) {
-				throw new Exception("Invalid Organization,User invitation is not successful");
-			}
-			
+			}			
 			
 			//send email
 			jsonReader.sendUserInviteEmail(dbInvitation, authorizationHeader);
@@ -106,10 +90,10 @@ public class UserInvitationService implements IUserInvitationService {
 	}
 
 	@Override
-	public UserInvitation findByToken(String token) {
+	public UserInvitation findByTokenAndEmail(String token,String email) {
 		try {
-			return userInvitationRepository.findByToken(token)
-					.orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+			return userInvitationRepository.findByTokenAndEmail(token,email);
+			
 
 		} catch (Exception e) {
 

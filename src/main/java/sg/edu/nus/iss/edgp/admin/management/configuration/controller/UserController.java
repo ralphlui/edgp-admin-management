@@ -234,11 +234,18 @@ public class UserController {
 
 			if (!token.isEmpty()) {
 
-				UserInvitation invitation = userInvitationService.findByToken(token);
+				UserInvitation invitation = userInvitationService.findByTokenAndEmail(token,userRequest.getEmail().trim());
+                 
+				if(invitation == null) {
+					message = "Invitation token  is invalid.";
+					auditService.logAudit(auditDTO, 400, message, authorizationHeader);
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
+				}
+				
 				if (invitation.isUsed() || invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
 
-					message = "Token has expired or already been used.";
+					message = "Invitation token has expired or already been used.";
 					auditService.logAudit(auditDTO, 403, message, authorizationHeader);
 					return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.error(message));
 
@@ -253,7 +260,7 @@ public class UserController {
 					return ResponseEntity.status(HttpStatus.CONFLICT).body(APIResponse.error(message));
 				}
 
-				UserDTO activatedUser = userService.accountActivate(userRequest);
+				UserDTO activatedUser = userService.accountActivate(userRequest,authorizationHeader);
 				if (activatedUser != null) {
 					UserInvitationDTO userInvitationDTO = userInvitationService.updateInvitation(userRequest);
 

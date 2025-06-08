@@ -43,6 +43,7 @@ public class UserService implements IUserService{
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final UserInvitationRepository userInvitationRepository;
+	private final UserOrganizationRepository userOrganizationRepository;
 	
 	private final PasswordEncoder passwordEncoder;
 	private final JWTService jwtService;
@@ -284,10 +285,11 @@ public class UserService implements IUserService{
 	}
 
 	@Override
-	public UserDTO accountActivate(UserRequest userReq) {
+	public UserDTO accountActivate(UserRequest userReq,String authorizationHeader) {
 		try {
 			Optional<UserInvitation> userInvitation = userInvitationRepository.findByToken(userReq.getUserInvitationtoken());
 			if(userInvitation.isPresent()) {
+				String createdBy = jwtService.getUserIdByAuthHeader(authorizationHeader);
 				User user = new  User();
 				user.setUsername(userReq.getUsername());
 				user.setPassword(userReq.getPassword());
@@ -298,7 +300,7 @@ public class UserService implements IUserService{
 				user.setVerificationCode(code);
 				Role role = roleRepository.findByRoleName(userInvitation.get().getRole().getRoleName());
 				user.setRole(role);
-				
+				user.setCreatedBy(createdBy);
 				user.setCreatedDate(LocalDateTime.now());
 				 
 				logger.info("Create User...");
@@ -306,6 +308,23 @@ public class UserService implements IUserService{
 				 
 				if (createdUser == null) {
 					throw new Exception("User registration is not successful");
+				}
+				
+				//save to user-org-role mapping
+				 
+				UserOrganization userOrg = new UserOrganization();
+				userOrg.setUser(createdUser);
+				userOrg.setOrganizationId(userInvitation.get().getOrganizationId());
+				userOrg.setRole(role);
+				userOrg.setActive(true);
+				userOrg.setCreatedBy(createdBy);
+				userOrg.setCreatedDate(LocalDateTime.now());
+				
+				
+				UserOrganization dbUserOrganization = userOrganizationRepository.save(userOrg);
+				
+				if (dbUserOrganization == null) {
+					throw new Exception("Invalid Organization,User invitation is not successful");
 				}
 				logger.info("User registration is successful.");
 				

@@ -14,7 +14,7 @@ public interface IUserInvitationService {
 	
 	boolean existsByEmailIsUsed(String email);
 	
-	UserInvitation findByToken(String token);
+	UserInvitation findByTokenAndEmail(String token,String email);
 	
 	
 	

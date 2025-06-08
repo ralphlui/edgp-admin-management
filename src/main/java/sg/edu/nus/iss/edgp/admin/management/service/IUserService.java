@@ -15,7 +15,7 @@ public interface IUserService {
 	 
 	 UserDTO updateUser (UserRequest user);
 	 
-	 UserDTO accountActivate (UserRequest user);
+	 UserDTO accountActivate (UserRequest user, String authorizationHeader);
 	 
 	 UserDTO verifyUser(String verificationCode);
 	 
