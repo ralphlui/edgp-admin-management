@@ -16,12 +16,12 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Role>{
 
 	private final RoleService roleService;
-	private final UserService userService;
+	 
 	
 	@Override
 	public ValidationResult validateCreation(Role role, String authorizationHeader) {
