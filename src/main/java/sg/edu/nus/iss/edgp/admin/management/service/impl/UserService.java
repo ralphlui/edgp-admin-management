@@ -333,8 +333,8 @@ public class UserService implements IUserService{
 			}
 		}
 			catch (Exception e) {
-				logger.error("Error occurred while updating password, " + e.toString());
-				e.printStackTrace();
+				logger.error("Error occurred while accountActivate, " + e.toString());
+				
 				
 			}
 		return null;
@@ -356,7 +356,7 @@ public class UserService implements IUserService{
 			return DTOMapper.toUserDTO(updatedUser);
 
 		} catch (Exception e) {
-			logger.error("Error occurred while validateUserLogin", e);
+			logger.error("Error occurred while resetPassword", e);
 			e.printStackTrace();
 			throw e;
 		}

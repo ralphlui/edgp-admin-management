@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.PermissionDTO; 
 import sg.edu.nus.iss.edgp.admin.management.entity.Permission;
@@ -27,6 +28,8 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
+
 class PermissionServiceTest {
 
 	@InjectMocks
@@ -36,9 +39,9 @@ class PermissionServiceTest {
 	@Mock
 	private RoleRepository roleRepository;
 
-	static Permission p1;
+	private Permission p1;
 
-	static Permission p2;
+	private Permission p2;
 
 	private static List<Permission> permissions;
 
@@ -81,7 +84,7 @@ class PermissionServiceTest {
 
 		Exception exception = assertThrows(RuntimeException.class, () -> permissionService.findPermission());
 
-		assertEquals("DB error", exception.getMessage());
+		assertEquals("An error occured while findPermission", exception.getMessage());
 		verify(permissionRepository).findAll();
 	}
 
@@ -117,7 +120,7 @@ class PermissionServiceTest {
 
 		Exception exception = assertThrows(RuntimeException.class, () -> permissionService.findScopesByRole("Admin"));
 
-		assertEquals("DB issue", exception.getMessage());
+		assertEquals("An error occured while findScopesByRole", exception.getMessage());
 		verify(roleRepository).findByRoleName("Admin");
 	}
 

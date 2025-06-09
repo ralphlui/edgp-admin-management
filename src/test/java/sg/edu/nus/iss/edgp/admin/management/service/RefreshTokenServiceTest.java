@@ -28,6 +28,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
+
 import sg.edu.nus.iss.edgp.admin.management.entity.RefreshToken;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
@@ -39,6 +41,8 @@ import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
+
  class RefreshTokenServiceTest {
 
 	@Mock

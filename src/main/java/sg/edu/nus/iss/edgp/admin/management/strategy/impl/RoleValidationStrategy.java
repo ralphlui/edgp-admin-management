@@ -63,13 +63,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	public ValidationResult validateUpdating(Role role, String header) {
 		ValidationResult validationResult = new ValidationResult();
 
-		if (role.getRoleId() == null || role.getRoleId().isEmpty()) {
-			validationResult.setMessage("Role ID cannot be empty.");
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			validationResult.setValid(false);
-			return validationResult;
-		}
-
+		
 		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
 			validationResult.setMessage("Bad Request: Role name could not be blank.");
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);

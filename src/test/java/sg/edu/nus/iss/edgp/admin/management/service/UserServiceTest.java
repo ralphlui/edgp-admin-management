@@ -31,11 +31,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.ActiveProfiles;
 
 import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.configuration.AWSConfig;
-import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
@@ -53,6 +52,8 @@ import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.EncryptionUtils;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
+
 class UserServiceTest {
 
 	private static List<User> mockUsers = new ArrayList<>();
@@ -90,10 +91,10 @@ class UserServiceTest {
 	static String authorizationHeader = "Bearer mock.jwt.token";
 	static String userId = "user123";
 
-	private static User user1;
-	private static User user2;
+	private User user1;
+	private User user2;
 
-	private static UserRequest userRequest;
+	private UserRequest userRequest;
 
 	private final String encryptedCode = "encryptedCode123";
 	private final String decryptedCode = "decryptedCode456";
@@ -101,9 +102,9 @@ class UserServiceTest {
 	static UserDTO mockUserDTO1;
 	static UserDTO mockUserDTO2;
 
-	private static Role role1;
+	private Role role1;
 
-	private static Role role2;
+	private Role role2;
 
 	@BeforeEach
 	void setUp() {

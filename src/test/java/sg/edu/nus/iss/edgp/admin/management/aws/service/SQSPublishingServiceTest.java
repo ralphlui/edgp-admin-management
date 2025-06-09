@@ -25,6 +25,8 @@ import static org.mockito.Mockito.*;
 import java.nio.charset.StandardCharsets;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
+
 public class SQSPublishingServiceTest {
 
 	private SqsClient sqsClient;

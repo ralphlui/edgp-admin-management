@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
-import sg.edu.nus.iss.edgp.admin.management.exception.RoleNotFoundException;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IRoleService;
@@ -42,9 +42,9 @@ public class RoleService implements IRoleService {
 			return roleDTO;
 		} catch (Exception e) {
 			logger.error("Error occurred while role creating, " + e.toString());	 
-			
+			throw new RoleServiceException("An error occured while creating role", e);
 		}
-		return null;
+		
 		
 	}
 
@@ -67,7 +67,7 @@ public class RoleService implements IRoleService {
 
 		} catch (Exception e) {
 			logger.error("findStatusTrue exception... {}", e.toString());
-			throw new RoleNotFoundException("An error occured while findByStatusTrue role", e);
+			throw new RoleServiceException("An error occured while findByStatusTrue role", e);
 		}
 
 	}
@@ -80,7 +80,7 @@ public class RoleService implements IRoleService {
 			roleDTO = DTOMapper.toRoleDTO(role);
 		} catch (Exception e) {
 			logger.error("findByRoleName exception... {}", e.toString());
-			throw new RoleNotFoundException("An error occured while findByRoleName role", e);
+			throw new RoleServiceException("An error occured while findByRoleName role", e);
 		}
 		return roleDTO;
 	}
@@ -104,10 +104,9 @@ public class RoleService implements IRoleService {
 
 		} catch (Exception e) {
 			logger.error("Role updating exception... {}", e.toString());
-
+			throw new RoleServiceException("An error occured while updating role", e);
 		}
 
-		return null;
 	}
 
 }

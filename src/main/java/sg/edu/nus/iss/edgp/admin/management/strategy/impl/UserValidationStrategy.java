@@ -96,15 +96,6 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	public ValidationResult validateUpdating(UserRequest user, String header) {
 		ValidationResult validationResult = new ValidationResult();
 
-		if (user.getUserId() == null || user.getUserId().isEmpty()) {
-			validationResult.setMessage("User ID cannot be empty.");
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			validationResult.setValid(false);
-			validationResult.setUserId(INVALID_USER_ID);
-			validationResult.setUserName(INVALID_USER_NAME);
-			return validationResult;
-		}
-
 		ValidationResult validationObjResult = validateObjectByUserId(user,true);
 		if (!validationObjResult.isValid()) {
 			return validationObjResult;

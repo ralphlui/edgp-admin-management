@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
-import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.RoleValidationStrategy;
@@ -44,16 +43,13 @@ public class RoleController {
 	private static final String UNEXPECTED_ERROR = "An unexpected error occurred. Please contact support.";
 	private static final String LOG_MESSAGE_FORMAT = "{} {}";
 	
+	 
+	private final  RoleService roleService;
 	
-	@Autowired
-	private  RoleService roleService;
+	private final RoleValidationStrategy roleValidationStrategy;
 	
 	
-	@Autowired
-	private RoleValidationStrategy roleValidationStrategy;
-	
-	@Autowired
-	private AuditService auditService;
+	private final AuditService auditService;
 
 	@Value("${audit.activity.type.prefix}")
 	String activityTypePrefix;
@@ -89,7 +85,8 @@ public class RoleController {
 			}
 
 		} catch (Exception e) {
-			message = UNEXPECTED_ERROR;
+			message = e instanceof RoleServiceException ? e.getMessage() : UNEXPECTED_ERROR;
+			
 	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 	        auditDTO.setRemarks(e.getMessage());
 	        auditService.logAudit(auditDTO, 500, message, "");
@@ -100,7 +97,7 @@ public class RoleController {
 
 	@PutMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<RoleDTO>> updateRole(@RequestHeader("Authorization") String authorizationHeader,
-			@RequestBody Role role) {
+			@RequestHeader("X-Role-Id") String roleId,@RequestBody Role role) {
 
 		logger.info("Calling Role update API...");
 
@@ -113,7 +110,7 @@ public class RoleController {
 
 		try {
 			 
-			String roleId = GeneralUtility.makeNotNull(role.getRoleId()).trim();
+			 roleId = GeneralUtility.makeNotNull(roleId).trim();
 
 			if (!roleId.equals("")) {
 				role.setRoleId(roleId);
@@ -134,12 +131,12 @@ public class RoleController {
 					}
 
 				} else {
-					auditService.logAudit(auditDTO, 400, validationResult.getMessage(), authorizationHeader);
+					auditService.logAudit(auditDTO,400, validationResult.getMessage(), authorizationHeader);
 	                return ResponseEntity.status(validationResult.getStatus()).body(APIResponse.error(validationResult.getMessage()));
 	                
 				}
 			} else {
-				message = "Bad Request:Campaign ID could not be blank.";
+				message = "Bad Request:Role ID could not be blank.";
 				logger.error(message);
 
 				auditService.logAudit(auditDTO, 400, message, authorizationHeader);
@@ -148,7 +145,8 @@ public class RoleController {
 			}
 
 		} catch (Exception e) {
-			message = UNEXPECTED_ERROR;
+			message = e instanceof RoleServiceException ? e.getMessage() : UNEXPECTED_ERROR;
+			
 	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 	        auditDTO.setRemarks(e.getMessage());
 	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
@@ -183,7 +181,8 @@ public class RoleController {
 			}
 
 		} catch (Exception e) {
-			message = UNEXPECTED_ERROR;
+			message = e instanceof RoleServiceException ? e.getMessage() : UNEXPECTED_ERROR;
+			
 	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 	        auditDTO.setRemarks(e.getMessage());
 	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);

@@ -24,11 +24,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.ActiveProfiles;
 
 import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
-import sg.edu.nus.iss.edgp.admin.management.exception.RoleNotFoundException;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
@@ -36,6 +37,7 @@ import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
 @ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
 class RoleServiceTest {
 
 	@InjectMocks
@@ -47,9 +49,9 @@ class RoleServiceTest {
 	@Mock
 	private JWTService jwtService;
 
-	private static Role role1;
-	private static Role role2;
-	private static List<Role> mockRoles;
+	private Role role1;
+	private Role role2;
+	private List<Role> mockRoles;
 
 	static String authorizationHeader = "Bearer mock.jwt.token";
 	static String userId = "user123";
@@ -93,7 +95,7 @@ class RoleServiceTest {
 	void testFindByStatusTrue_onException() {
 
 		when(roleRepository.findByStatusTrue()).thenThrow(new RuntimeException("DB error"));
-		RoleNotFoundException exception = assertThrows(RoleNotFoundException.class, () -> {
+		RoleServiceException exception = assertThrows(RoleServiceException.class, () -> {
 			roleService.findByStatusTrue();
 		});
 
@@ -118,16 +120,20 @@ class RoleServiceTest {
 		}
 	}
 
-	@Test
-	void testCreateRole_onException() {
+	 @Test
+	    void testCreateRole_onException() {
+	       
+	        when(roleRepository.save(any(Role.class))).thenThrow(new RoleServiceException("DB error"));
+ 
+	        RoleServiceException ex = assertThrows(RoleServiceException.class, () -> {
+	            roleService.createRole(role1);
+	        });
+ 
+	        assertEquals("An error occured while creating role", ex.getMessage());
 
-		when(roleRepository.save(any(Role.class))).thenThrow(new RuntimeException("DB error"));
-
-		RoleDTO result = roleService.createRole(role1);
-
-		assertNull(result);
-		verify(roleRepository).save(role1);
-	}
+	         
+	        verify(roleRepository).save(role1);
+	    }
 
 	@Test
 	void testFindByRoleName_onSuccess() {
@@ -152,7 +158,7 @@ class RoleServiceTest {
 		String roleName = "Admin";
 		when(roleRepository.findByRoleName(roleName)).thenThrow(new RuntimeException("DB failure"));
 
-		RoleNotFoundException exception = assertThrows(RoleNotFoundException.class, () -> {
+		RoleServiceException exception = assertThrows(RoleServiceException.class, () -> {
 			roleService.findByRoleName(roleName);
 		});
 
@@ -186,13 +192,17 @@ class RoleServiceTest {
 	}
 
 	@Test
-	void testUpdateRole_shouldReturnNull_onException() {
-		when(roleRepository.findById("1")).thenThrow(new RuntimeException("DB lookup failed"));
+	void testUpdateRole_shouldThrowException_onFindByIdFailure() {
+	    
+	    when(roleRepository.findById("1")).thenThrow(new RuntimeException("DB lookup failed"));
+ 
+	    RoleServiceException ex = assertThrows(RoleServiceException.class, () -> {
+	        roleService.updateRole(role1, authorizationHeader);
+	    });
 
-		RoleDTO result = roleService.updateRole(role1, authorizationHeader);
-
-		assertNull(result);
-		verify(roleRepository).findById("1");
+	    assertEquals("An error occured while updating role", ex.getMessage());
+	    verify(roleRepository).findById("1");
 	}
+
 
 }

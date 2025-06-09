@@ -14,6 +14,8 @@ import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.PermissionDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Permission;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.exception.PermissionServiceException;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.repository.PermissionRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
@@ -47,9 +49,10 @@ public class PermissionService implements IPermissionService {
 
 			return permissionDTOs;
 
-		} catch (Exception ex) {
-			logger.error("findPermission exception... {}", ex.toString());
-			throw ex;
+		} catch (Exception e) {
+			logger.error("findPermission exception... {}", e.toString());
+			throw new PermissionServiceException("An error occured while findPermission", e);
+		
 		}
 	}
 
@@ -65,9 +68,9 @@ public class PermissionService implements IPermissionService {
 			}
 
 			return scopes;
-		} catch (Exception ex) {
-			logger.error("findPermissionByRole exception... {}", ex.toString());
-			throw ex;
+		} catch (Exception e) {
+			logger.error("findPermissionByRole exception... {}", e.toString());
+			throw new PermissionServiceException("An error occured while findScopesByRole", e);
 		}
 	}
 
