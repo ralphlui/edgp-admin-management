@@ -29,7 +29,7 @@ public class PasswordValidatorService {
 		return NON_ALPHANUMERIC_PATTERN.matcher(password).find();
 	}
 
-	public static String validatePassword(String password) {
+	public  String validatePassword(String password) {
 		if (password == null || password.length() < MIN_LENGTH || password.length() > MAX_LENGTH) {
 			return "Password must be within 8-30 characters long.";
 		}

@@ -52,7 +52,7 @@ public class RoleValidationStrategyTest {
       
         role.setRoleName("");
 
-        sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult result = roleValidationStrategy.validateCreation(role, "mockHeader");
+        ValidationResult result = roleValidationStrategy.validateCreation(role, "mockHeader");
 
         assertFalse(result.isValid());
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatus());
@@ -101,7 +101,7 @@ public class RoleValidationStrategyTest {
         Role role = new Role();
         role.setRoleName("ValidRole");
 
-        ValidationResult result = roleValidationStrategy.validateUpdating(role, "mockHeader");
+        ValidationResult result = roleValidationStrategy.validateUpdating(role, authorizationHeader);
 
         assertTrue(result.isValid());
         assertNull(result.getMessage());
