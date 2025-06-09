@@ -1,4 +1,4 @@
-package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
+package sg.edu.nus.iss.edgp.admin.management.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
