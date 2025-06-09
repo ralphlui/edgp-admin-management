@@ -10,8 +10,6 @@ import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, String> {
 	
-	Role save (Role role);
-	
 	List<Role> findByStatusTrue();
 	
 	Role findByRoleName(String roleName);

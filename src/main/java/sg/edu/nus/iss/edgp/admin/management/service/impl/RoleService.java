@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleNotFoundException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IRoleService;
@@ -39,10 +41,11 @@ public class RoleService implements IRoleService {
 			RoleDTO roleDTO = DTOMapper.toRoleDTO(createdRole);
 			return roleDTO;
 		} catch (Exception e) {
-			logger.error("Error occurred while role creating, " + e.toString());
-
+			logger.error("Error occurred while role creating, " + e.toString());	 
+			
 		}
 		return null;
+		
 	}
 
 	@Override
@@ -62,9 +65,9 @@ public class RoleService implements IRoleService {
 
 			return roleDTOList;
 
-		} catch (Exception ex) {
-			logger.error("findStatusTrue exception... {}", ex.toString());
-			throw ex;
+		} catch (Exception e) {
+			logger.error("findStatusTrue exception... {}", e.toString());
+			throw new RoleNotFoundException("An error occured while findByStatusTrue role", e);
 		}
 
 	}
@@ -75,8 +78,9 @@ public class RoleService implements IRoleService {
 		try {
 			Role role = roleRepository.findByRoleName(roleName);
 			roleDTO = DTOMapper.toRoleDTO(role);
-		} catch (Exception ex) {
-			logger.error("findByRoleName exception... {}", ex.toString());
+		} catch (Exception e) {
+			logger.error("findByRoleName exception... {}", e.toString());
+			throw new RoleNotFoundException("An error occured while findByRoleName role", e);
 		}
 		return roleDTO;
 	}
@@ -98,8 +102,8 @@ public class RoleService implements IRoleService {
 			roleDTO = DTOMapper.toRoleDTO(savedRole);
 			return roleDTO;
 
-		} catch (Exception ex) {
-			logger.error("Role updating exception... {}", ex.toString());
+		} catch (Exception e) {
+			logger.error("Role updating exception... {}", e.toString());
 
 		}
 
