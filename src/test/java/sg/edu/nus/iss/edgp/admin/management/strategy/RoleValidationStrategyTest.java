@@ -24,7 +24,7 @@ import sg.edu.nus.iss.edgp.admin.management.strategy.impl.RoleValidationStrategy
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 
 @ExtendWith(MockitoExtension.class)
-public class RoleValidationStrategyTest {
+class RoleValidationStrategyTest {
 	
 	@Mock
     private RoleService roleService;

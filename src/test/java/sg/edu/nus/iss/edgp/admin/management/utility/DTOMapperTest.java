@@ -20,7 +20,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 
 @ExtendWith(MockitoExtension.class)
-public class DTOMapperTest {
+class DTOMapperTest {
 
 	static Role role;
 

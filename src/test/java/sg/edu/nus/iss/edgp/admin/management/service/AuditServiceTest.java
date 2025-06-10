@@ -18,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.context.ActiveProfiles;
 
 import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.aws.service.SQSPublishingService;
@@ -29,8 +28,6 @@ import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 
 @ExtendWith(MockitoExtension.class)
-@ActiveProfiles("test")
-
 class AuditServiceTest {
 
 	@Spy

@@ -29,7 +29,6 @@ import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-
 class PermissionServiceTest {
 
 	@InjectMocks

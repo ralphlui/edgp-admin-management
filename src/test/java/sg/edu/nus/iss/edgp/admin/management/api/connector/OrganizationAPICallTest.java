@@ -16,7 +16,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 
-public class OrganizationAPICallTest {
+class OrganizationAPICallTest {
 	private OrganizationAPICall orgAPICall;
 
 	@Mock

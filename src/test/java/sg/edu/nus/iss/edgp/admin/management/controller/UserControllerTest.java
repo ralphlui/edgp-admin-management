@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,8 +32,6 @@ import sg.edu.nus.iss.edgp.admin.management.entity.RefreshToken;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
-import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
-import sg.edu.nus.iss.edgp.admin.management.exception.UserServiceException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
@@ -43,23 +39,9 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.impl.UserValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.CookieUtils;
-import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -70,7 +52,7 @@ import java.util.Optional;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-public class UserControllerTest {
+class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
