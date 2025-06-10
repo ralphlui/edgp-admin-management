@@ -1,6 +1,7 @@
 package sg.edu.nus.iss.edgp.admin.management.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
@@ -14,5 +15,7 @@ public interface IRoleService {
 	List<RoleDTO> findByStatusTrue();
 	
 	RoleDTO findByRoleName(String roleName);
+	
+	Optional<Role> findByRoleId(String roleId);
 
 }

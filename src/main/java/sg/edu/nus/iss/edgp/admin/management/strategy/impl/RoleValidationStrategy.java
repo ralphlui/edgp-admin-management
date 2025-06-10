@@ -1,5 +1,7 @@
 package sg.edu.nus.iss.edgp.admin.management.strategy.impl;
 
+import java.util.Optional;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +65,15 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	public ValidationResult validateUpdating(Role role, String header) {
 		ValidationResult validationResult = new ValidationResult();
 
+		if(!GeneralUtility.makeNotNull(role.getRoleId()).equals("")) {
+			Optional<Role> roleDb =roleService.findByRoleId(role.getRoleId());
+			if(roleDb.isEmpty()) {
+				validationResult.setMessage("Bad Request: Role Id is invalid.");
+				validationResult.setStatus(HttpStatus.BAD_REQUEST);
+				validationResult.setValid(false);
+				return validationResult;
+			}
+		}
 		
 		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
 			validationResult.setMessage("Bad Request: Role name could not be blank.");

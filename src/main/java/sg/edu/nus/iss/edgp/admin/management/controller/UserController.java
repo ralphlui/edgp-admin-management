@@ -130,6 +130,7 @@ public class UserController {
 
 		try {
 			String userID = GeneralUtility.makeNotNull(userId).trim();
+			
 
 			if (userID.equals("")) {
 
@@ -140,7 +141,7 @@ public class UserController {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
 			}
-
+			userRequest.setUserId(userID);
 			ValidationResult validationResult = userValidationStrategy.validateUpdating(userRequest,
 					authorizationHeader);
 
