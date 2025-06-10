@@ -18,7 +18,7 @@ import org.mockito.MockitoAnnotations;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 
 
-public class NotificationAPICallTest {
+class NotificationAPICallTest {
 	
 	private NotificationAPICall notiAPICall;
 

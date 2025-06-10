@@ -53,7 +53,6 @@ import sg.edu.nus.iss.edgp.admin.management.utility.EncryptionUtils;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-
 class UserServiceTest {
 
 	private static List<User> mockUsers = new ArrayList<>();

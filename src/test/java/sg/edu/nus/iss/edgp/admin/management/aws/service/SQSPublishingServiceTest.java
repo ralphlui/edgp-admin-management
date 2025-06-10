@@ -8,10 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -25,8 +21,6 @@ import static org.mockito.Mockito.*;
 import java.nio.charset.StandardCharsets;
 
 @ExtendWith(MockitoExtension.class)
-@ActiveProfiles("test")
-
 public class SQSPublishingServiceTest {
 
 	private SqsClient sqsClient;

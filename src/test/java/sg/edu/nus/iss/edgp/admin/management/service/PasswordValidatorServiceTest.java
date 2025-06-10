@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PasswordValidatorService;
 
 @ExtendWith(MockitoExtension.class)
-public class PasswordValidatorServiceTest {
+class PasswordValidatorServiceTest {
 	
 	@InjectMocks
     private PasswordValidatorService passwordValidatorService;
