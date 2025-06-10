@@ -96,15 +96,6 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 	public ValidationResult validateUpdating(UserRequest user, String header) {
 		ValidationResult validationResult = new ValidationResult();
 
-		if (user.getUserId() == null || user.getUserId().isEmpty()) {
-			validationResult.setMessage("User ID cannot be empty.");
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			validationResult.setValid(false);
-			validationResult.setUserId(INVALID_USER_ID);
-			validationResult.setUserName(INVALID_USER_NAME);
-			return validationResult;
-		}
-
 		ValidationResult validationObjResult = validateObjectByUserId(user,true);
 		if (!validationObjResult.isValid()) {
 			return validationObjResult;
@@ -266,8 +257,8 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			validationResult.setMessage("Invitation already sent to "+userReq.getEmail());
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);
 			validationResult.setValid(false);
-			validationResult.setUserId(dbUser.getUserId());
-			validationResult.setUserName(dbUser.getUsername());
+			validationResult.setUserId(userReq.getUserId());
+			validationResult.setUserName(userReq.getUsername());
 			return validationResult;
 		}
 		

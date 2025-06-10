@@ -16,12 +16,12 @@ import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
 import sg.edu.nus.iss.edgp.admin.management.strategy.IAPIHelperValidationStrategy;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Role>{
 
 	private final RoleService roleService;
-	private final UserService userService;
+	 
 	
 	@Override
 	public ValidationResult validateCreation(Role role, String authorizationHeader) {
@@ -63,13 +63,7 @@ public class RoleValidationStrategy implements IAPIHelperValidationStrategy <Rol
 	public ValidationResult validateUpdating(Role role, String header) {
 		ValidationResult validationResult = new ValidationResult();
 
-		if (role.getRoleId() == null || role.getRoleId().isEmpty()) {
-			validationResult.setMessage("Role ID cannot be empty.");
-			validationResult.setStatus(HttpStatus.BAD_REQUEST);
-			validationResult.setValid(false);
-			return validationResult;
-		}
-
+		
 		if (role.getRoleName() == null || role.getRoleName().isEmpty()) {
 			validationResult.setMessage("Bad Request: Role name could not be blank.");
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);

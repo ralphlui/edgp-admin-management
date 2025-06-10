@@ -76,11 +76,11 @@
 			<artifactId>aws-secretsmanager-jdbc</artifactId>
 			<version>2.0.2</version>
 		</dependency>
-		<dependency>
+	<!--	<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>secretsmanager</artifactId>
 			<version>2.21.46</version>
-		</dependency>		
+		</dependency> -->		
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>

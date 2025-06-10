@@ -1,118 +1,207 @@
 package sg.edu.nus.iss.edgp.admin.management.service;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
+import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
+import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RoleService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
+import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 
-@SpringBootTest
-@Transactional
+@ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class RoleServiceTest {
 
 	@InjectMocks
-    private RoleService roleService;
+	private RoleService roleService;
 
-    @Mock
-    private RoleRepository roleRepository;
+	@Mock
+	private RoleRepository roleRepository;
 
-    private static Role role1;
-    private static Role role2;
-    private static List<Role> mockRoles;
+	@Mock
+	private JWTService jwtService;
 
-    static String authorizationHeader = "Bearer mock.jwt.token";
-    static String userId = "user123";
+	private Role role1;
+	private Role role2;
+	private List<Role> mockRoles;
 
-    static RoleDTO mockRoleDTO1 ;
-    static RoleDTO mockRoleDTO2 ;
-    
-    @BeforeEach
-    void setUp() {
-        role1 = new Role("1", "OrgAdmin", "Organization Admin", true, null, null, null, null);
-        role2 = new Role("2", "Analysis", "Data Analysis", true, null, null, null, null);
+	static String authorizationHeader = "Bearer mock.jwt.token";
+	static String userId = "user123";
 
-        mockRoles = new ArrayList<>();
-        mockRoles.add(role1);
-        mockRoles.add(role2);
-        
-        mockRoleDTO1 = DTOMapper.toRoleDTO(role1);
-        mockRoleDTO2 = DTOMapper.toRoleDTO(role2);
-        
-    }
+	static RoleDTO mockRoleDTO1;
+	static RoleDTO mockRoleDTO2;
 
-    @Test
-    void testFindStatusTrue() {
-        try (MockedStatic<DTOMapper> mockedMapper = Mockito.mockStatic(DTOMapper.class)) {
-            
-            when(roleRepository.findByStatusTrue()).thenReturn(mockRoles);
+	@BeforeEach
+	void setUp() {
+		role1 = new Role("1", "OrgAdmin", "Organization Admin", true, LocalDateTime.now(), null, null, null);
+		role2 = new Role("2", "Analysis", "Data Analysis", true, LocalDateTime.now(), null, null, null);
 
-            mockedMapper.when(() -> DTOMapper.toRoleDTO(role1)).thenReturn(mockRoleDTO1);
-            mockedMapper.when(() -> DTOMapper.toRoleDTO(role2)).thenReturn(mockRoleDTO2);
+		mockRoles = new ArrayList<>();
+		mockRoles.add(role1);
+		mockRoles.add(role2);
 
-            List<RoleDTO> result = roleService.findByStatusTrue();
+		mockRoleDTO1 = DTOMapper.toRoleDTO(role1);
+		mockRoleDTO2 = DTOMapper.toRoleDTO(role2);
 
-            assertNotNull(result);
-            assertEquals(2, result.size());
-            assertEquals("1", result.get(0).getRoleId());
-            assertEquals("2", result.get(1).getRoleId());
-            verify(roleRepository, times(1)).findByStatusTrue();
-        }
-    }
-    
-    @Test
-	void createRole() {
-		String userId= "user123";
-		role1.setCreatedBy(userId);
-		Mockito.when(roleRepository.save(Mockito.any(Role.class))).thenReturn(role1);
-		
-		Mockito.when(roleRepository.findById(role1.getRoleId())).thenReturn(Optional.of(role1));
-		RoleDTO roleDTO = roleService.createRole(role1);
-		
-		assertEquals(roleDTO.getRoleDescription(), role1.getRoleDescription());
-		 
 	}
 
 	@Test
-	void updateRole() {
-		Mockito.when(roleRepository.save(Mockito.any(Role.class))).thenReturn(role1);
-		 
-		Mockito.when(roleRepository.findById(role1.getRoleId())).thenReturn(Optional.of(role1));
-		role1.setRoleDescription("test update");
-		RoleDTO roleDTO = roleService.updateRole(role1,authorizationHeader);
-		assertEquals(roleDTO.getRoleDescription(), "test update");
+	void testFindStatusTrue() {
+		try (MockedStatic<DTOMapper> mockedMapper = Mockito.mockStatic(DTOMapper.class)) {
+
+			when(roleRepository.findByStatusTrue()).thenReturn(mockRoles);
+
+			mockedMapper.when(() -> DTOMapper.toRoleDTO(role1)).thenReturn(mockRoleDTO1);
+			mockedMapper.when(() -> DTOMapper.toRoleDTO(role2)).thenReturn(mockRoleDTO2);
+
+			List<RoleDTO> result = roleService.findByStatusTrue();
+
+			assertEquals(2, result.size());
+			assertEquals("1", result.get(0).getRoleId());
+			assertEquals("2", result.get(1).getRoleId());
+			verify(roleRepository, times(1)).findByStatusTrue();
+		}
 	}
-	
+
 	@Test
-	void findRoleByName() {
-		Mockito.when(roleRepository.save(Mockito.any(Role.class))).thenReturn(role1);
-		
-		Mockito.when(roleRepository.findByRoleName(role1.getRoleName())).thenReturn(role1);
-		
-		RoleDTO roleDTO = roleService.findByRoleName(role1.getRoleName());
-		assertEquals(roleDTO.getRoleId(), role1.getRoleId());
+	void testFindByStatusTrue_onException() {
+
+		when(roleRepository.findByStatusTrue()).thenThrow(new RuntimeException("DB error"));
+		RoleServiceException exception = assertThrows(RoleServiceException.class, () -> {
+			roleService.findByStatusTrue();
+		});
+
+		assertEquals("An error occured while findByStatusTrue role", exception.getMessage());
+		assertTrue(exception.getCause() instanceof RuntimeException);
+		assertEquals("DB error", exception.getCause().getMessage());
+
+		verify(roleRepository).findByStatusTrue();
 	}
+
+	@Test
+	void testCreate() {
+
+		when(roleRepository.save(any(Role.class))).thenReturn(role1);
+
+		try (MockedStatic<DTOMapper> mocked = mockStatic(DTOMapper.class)) {
+			mocked.when(() -> DTOMapper.toRoleDTO(any(Role.class))).thenReturn(mockRoleDTO1);
+
+			RoleDTO roleDTO = roleService.createRole(role1);
+
+			assertEquals("OrgAdmin", roleDTO.getRoleName());
+		}
+	}
+
+	 @Test
+	    void testCreateRole_onException() {
+	       
+	        when(roleRepository.save(any(Role.class))).thenThrow(new RoleServiceException("DB error"));
+ 
+	        RoleServiceException ex = assertThrows(RoleServiceException.class, () -> {
+	            roleService.createRole(role1);
+	        });
+ 
+	        assertEquals("An error occured while creating role", ex.getMessage());
+
+	         
+	        verify(roleRepository).save(role1);
+	    }
+
+	@Test
+	void testFindByRoleName_onSuccess() {
+		when(roleRepository.findByRoleName("Admin")).thenReturn(role1);
+
+		try (MockedStatic<DTOMapper> mockMapper = Mockito.mockStatic(DTOMapper.class)) {
+			mockMapper.when(() -> DTOMapper.toRoleDTO(role1)).thenReturn(mockRoleDTO1);
+
+			RoleDTO result = roleService.findByRoleName("Admin");
+
+			assertNotNull(result);
+			assertEquals("OrgAdmin", result.getRoleName());
+
+			verify(roleRepository).findByRoleName("Admin");
+			mockMapper.verify(() -> DTOMapper.toRoleDTO(role1));
+		}
+	}
+
+	@Test
+	void testFindByRoleName_onExcetpion() {
+
+		String roleName = "Admin";
+		when(roleRepository.findByRoleName(roleName)).thenThrow(new RuntimeException("DB failure"));
+
+		RoleServiceException exception = assertThrows(RoleServiceException.class, () -> {
+			roleService.findByRoleName(roleName);
+		});
+
+		assertEquals("An error occured while findByRoleName role", exception.getMessage());
+		assertTrue(exception.getCause() instanceof RuntimeException);
+		assertEquals("DB failure", exception.getCause().getMessage());
+
+		verify(roleRepository).findByRoleName(roleName);
+	}
+
+	@Test
+	void testUpdateRole_onSuccess() throws JwtException, IllegalArgumentException, Exception {
+		Role dbRole = new Role();
+		dbRole.setRoleId("1");
+		when(roleRepository.findById("1")).thenReturn(Optional.of(dbRole));
+		when(jwtService.getUserIdByAuthHeader(authorizationHeader)).thenReturn("user123");
+		when(roleRepository.save(any(Role.class))).thenReturn(dbRole);
+
+		try (MockedStatic<GeneralUtility> generalUtilMock = Mockito.mockStatic(GeneralUtility.class);
+				MockedStatic<DTOMapper> dtoMapperMock = Mockito.mockStatic(DTOMapper.class)) {
+			generalUtilMock.when(() -> GeneralUtility.makeNotNull("Admin")).thenReturn("Admin");
+			generalUtilMock.when(() -> GeneralUtility.makeNotNull("Admin role")).thenReturn("Admin role");
+			dtoMapperMock.when(() -> DTOMapper.toRoleDTO(dbRole)).thenReturn(mockRoleDTO1);
+
+			RoleDTO result = roleService.updateRole(role1, authorizationHeader);
+
+			assertNotNull(result);
+			assertEquals("OrgAdmin", result.getRoleName());
+			verify(roleRepository).save(dbRole);
+		}
+	}
+
+	@Test
+	void testUpdateRole_shouldThrowException_onFindByIdFailure() {
+	    
+	    when(roleRepository.findById("1")).thenThrow(new RuntimeException("DB lookup failed"));
+ 
+	    RoleServiceException ex = assertThrows(RoleServiceException.class, () -> {
+	        roleService.updateRole(role1, authorizationHeader);
+	    });
+
+	    assertEquals("An error occured while updating role", ex.getMessage());
+	    verify(roleRepository).findById("1");
+	}
+
 
 }

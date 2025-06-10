@@ -1,4 +1,4 @@
-package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
+package sg.edu.nus.iss.edgp.admin.management.controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,7 +36,9 @@ import sg.edu.nus.iss.edgp.admin.management.utility.CookieUtils;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserNotFoundException;
+import sg.edu.nus.iss.edgp.admin.management.exception.UserServiceException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 
 @RestController
@@ -54,8 +56,7 @@ public class UserController {
 	private final CookieUtils cookieUtils;
 	private final RefreshTokenService refreshTokenService;
 
-	@Autowired
-	private AuditService auditService;
+	private final AuditService auditService;
 
 	private String INVALID_USER_ID = AuditLogInvalidUser.INVALID_USER_ID.toString();
 	private String INVALID_USER_NAME = AuditLogInvalidUser.INVALID_USER_NAME.toString();
@@ -86,7 +87,7 @@ public class UserController {
 			if (validationResult.isValid()) {
 
 				UserDTO userDTO = userService.createUser(userRequest);
-				if(userDTO == null) {
+				if (userDTO == null) {
 					message = "User creation is not successful";
 					auditService.logAudit(auditDTO, 500, message, "");
 					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -116,7 +117,7 @@ public class UserController {
 
 	@PutMapping(value = "", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> updateUser(@RequestHeader("Authorization") String authorizationHeader,
-			@RequestBody UserRequest userRequest) {
+			@RequestHeader("X-User-Id") String userId, @RequestBody UserRequest userRequest) {
 		logger.info("Call user update API...");
 		String message;
 		String activityType = "Authentication-UpdateUser";
@@ -128,7 +129,17 @@ public class UserController {
 				httpMethod);
 
 		try {
-			String userID = userRequest.getUserId();
+			String userID = GeneralUtility.makeNotNull(userId).trim();
+
+			if (userID.equals("")) {
+
+				message = "Bad Request:User ID could not be blank.";
+				logger.error(message);
+
+				auditService.logAudit(auditDTO, 400, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
+
+			}
 
 			ValidationResult validationResult = userValidationStrategy.validateUpdating(userRequest,
 					authorizationHeader);
@@ -137,14 +148,14 @@ public class UserController {
 
 				userRequest.setUserId(userID);
 				UserDTO userDTO = userService.updateUser(userRequest);
-				
-				if(userDTO == null) {
+
+				if (userDTO == null) {
 					message = "User updating is not successful";
 					auditService.logAudit(auditDTO, 500, message, "");
 					return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 							.body(APIResponse.error(validationResult.getMessage()));
 				}
-				
+
 				message = "User updated successfully.";
 				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
 				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
@@ -234,15 +245,16 @@ public class UserController {
 
 			if (!token.isEmpty()) {
 
-				UserInvitation invitation = userInvitationService.findByTokenAndEmail(token,userRequest.getEmail().trim());
-                 
-				if(invitation == null) {
+				UserInvitation invitation = userInvitationService.findByTokenAndEmail(token,
+						userRequest.getEmail().trim());
+
+				if (invitation == null) {
 					message = "Invitation token  is invalid.";
 					auditService.logAudit(auditDTO, 400, message, authorizationHeader);
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
 				}
-				
+
 				if (invitation.isUsed() || invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
 
 					message = "Invitation token has expired or already been used.";
@@ -260,7 +272,7 @@ public class UserController {
 					return ResponseEntity.status(HttpStatus.CONFLICT).body(APIResponse.error(message));
 				}
 
-				UserDTO activatedUser = userService.accountActivate(userRequest,authorizationHeader);
+				UserDTO activatedUser = userService.accountActivate(userRequest, authorizationHeader);
 				if (activatedUser != null) {
 					UserInvitationDTO userInvitationDTO = userInvitationService.updateInvitation(userRequest);
 
@@ -622,6 +634,8 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
 
 		} catch (Exception e) {
+			message = e instanceof UserServiceException ? e.getMessage() : UNEXPECTED_ERROR;
+			
 			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 			auditDTO.setRemarks(e.getMessage());
 			auditService.logAudit(auditDTO, 500, message, "");

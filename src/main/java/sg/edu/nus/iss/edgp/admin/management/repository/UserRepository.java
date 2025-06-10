@@ -10,8 +10,6 @@ import sg.edu.nus.iss.edgp.admin.management.entity.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, String>  {
 	
-	User save(User user);
-	
     User findByEmail(String email);
 	
 	User findByUserId(String userId);

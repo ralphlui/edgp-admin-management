@@ -1,4 +1,4 @@
-package sg.edu.nus.iss.edgp.admin.management.configuration.controller;
+package sg.edu.nus.iss.edgp.admin.management.controller;
 
 import java.util.List;
 
@@ -21,6 +21,7 @@ import sg.edu.nus.iss.edgp.admin.management.dto.PermissionDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
+import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
@@ -37,13 +38,9 @@ public class PermissionController {
 	private static final String UNEXPECTED_ERROR = "An unexpected error occurred. Please contact support.";
 	private static final String LOG_MESSAGE_FORMAT = "{} {}";
 	
-	
-	@Autowired
-	private PermissionService permissionService;
-	
-	
-	@Autowired
-	private AuditService auditService;
+	private final PermissionService permissionService;
+	 
+	private final AuditService auditService;
 
 	@Value("${audit.activity.type.prefix}")
 	String activityTypePrefix;
@@ -77,11 +74,12 @@ public class PermissionController {
 			}
 
 		} catch (Exception e) {
-			message = UNEXPECTED_ERROR;
+			message = e instanceof RoleServiceException ? e.getMessage() : UNEXPECTED_ERROR;
+			
 	        logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
 	        auditDTO.setRemarks(e.getMessage());
-	        auditService.logAudit(auditDTO, 500, message, authorizationHeader);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error(message));
+	        auditService.logAudit(auditDTO, 401, message, authorizationHeader);
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(message));
 		}
 	}
 
