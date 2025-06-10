@@ -7,22 +7,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class RoleServiceExceptionTest {
+public class UserServiceExceptionTest {
 
 	@Test
 	void testConstructor() {
 
-		String errorMessage = "Role not found";
-		RoleServiceException exception = new RoleServiceException(errorMessage);
+		String errorMessage = "Invalid User";
+		UserServiceException exception = new UserServiceException(errorMessage);
 
 		assertEquals(errorMessage, exception.getMessage());
 	}
 
 	@Test
 	void testConstructorWithMessageAndCause() {
-		String message = "Role not found";
+		String message = "Invalid User";
 		Throwable cause = new RuntimeException("Database error");
-		RoleServiceException exception = new RoleServiceException(message, cause);
+		UserServiceException exception = new UserServiceException(message, cause);
 
 		assertEquals(message, exception.getMessage());
 		assertEquals(cause, exception.getCause());

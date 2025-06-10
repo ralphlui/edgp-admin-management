@@ -257,8 +257,8 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			validationResult.setMessage("Invitation already sent to "+userReq.getEmail());
 			validationResult.setStatus(HttpStatus.BAD_REQUEST);
 			validationResult.setValid(false);
-			validationResult.setUserId(dbUser.getUserId());
-			validationResult.setUserName(dbUser.getUsername());
+			validationResult.setUserId(userReq.getUserId());
+			validationResult.setUserName(userReq.getUsername());
 			return validationResult;
 		}
 		
