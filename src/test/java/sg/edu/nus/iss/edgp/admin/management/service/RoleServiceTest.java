@@ -1,5 +1,6 @@
 package sg.edu.nus.iss.edgp.admin.management.service;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -202,6 +203,17 @@ class RoleServiceTest {
 	    assertEquals("An error occured while updating role", ex.getMessage());
 	    verify(roleRepository).findById("1");
 	}
+	
+	 @Test
+	    void testFindByRoleId_NotFound() {
+	        String roleId = "INVALID";
+
+	        when(roleRepository.findById(roleId)).thenReturn(Optional.empty());
+
+	        Optional<Role> result = roleService.findByRoleId(roleId);
+
+	        assertFalse(result.isPresent());
+	    }
 
 
 }

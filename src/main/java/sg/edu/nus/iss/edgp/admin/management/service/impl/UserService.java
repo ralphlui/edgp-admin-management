@@ -138,7 +138,7 @@ public class UserService implements IUserService{
 			return user;
 			
 		} catch (Exception e) {
-			logger.error("Error occurred while checking specific active User", e);
+			logger.error("Error occurred while checking specific active user", e);
 			e.printStackTrace();
 			throw e;
 		}
@@ -156,7 +156,7 @@ public class UserService implements IUserService{
 			User user = userRepository.findByUserId(userId);
 			return user;
 		} catch (Exception e) {
-			logger.error("Exception occurred while executing findByUserId", e);
+			logger.error("Exception occurred while finding User", e);
 			throw e;
 		}
 	}
@@ -195,7 +195,7 @@ public class UserService implements IUserService{
 			return result;
 
 		} catch (Exception ex) {
-			logger.error("findByIsActiveTrue exception...", ex);
+			logger.error("Error occurred while finding active users.", ex);
 			throw ex;
 
 		}
@@ -333,7 +333,7 @@ public class UserService implements IUserService{
 			}
 		}
 			catch (Exception e) {
-				logger.error("Error occurred while accountActivate, " + e.toString());
+				logger.error("Error occurred while account activate, " + e.toString());
 				
 				
 			}
@@ -356,7 +356,7 @@ public class UserService implements IUserService{
 			return DTOMapper.toUserDTO(updatedUser);
 
 		} catch (Exception e) {
-			logger.error("Error occurred while resetPassword", e);
+			logger.error("Error occurred while reset Password", e);
 			e.printStackTrace();
 			throw e;
 		}
