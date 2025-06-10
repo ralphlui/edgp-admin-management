@@ -73,7 +73,6 @@ public class JSONReader {
 	}
 
 	
-	
 	public JSONObject getOrganization(String orgId, String authorizationHeader) {
 
 		JSONObject jsonResponse = new JSONObject();
