@@ -54,6 +54,21 @@ spec:
                 configMapKeyRef:
                   name: my-configmap
                   key: NOTIFICATION_URL
+            - name: ORGANIZATION_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: ORGANIZATION_URL
+            - name: aws_access_key_id
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_edgp_access_key_id
+            - name: aws_secret_key_id
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_edgp_secret_key_id
           resources:
            requests:
              cpu: "50m"
