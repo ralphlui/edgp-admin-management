@@ -3,7 +3,7 @@ FROM openjdk:17
 # Set the working directory to /app
 WORKDIR /app
 # Copy the Spring Boot application JAR file into the Docker image
-COPY target/edgp-admin-management-0.0.1-SNAPSHOT /app/edgp-admin-management-0.0.1-SNAPSHOT.jar
+COPY target/edgp-admin-management-0.0.1-SNAPSHOT.jar /app/edgp-admin-management-0.0.1-SNAPSHOT.jar
 # Copy certificate from build context into container
 COPY devplify.crt /tmp/devplify.crt
 #COPY demo.devplify.crt /tmp/demo.devplify.crt
