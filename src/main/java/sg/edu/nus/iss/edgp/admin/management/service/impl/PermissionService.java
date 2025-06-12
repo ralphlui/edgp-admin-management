@@ -5,20 +5,15 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.PermissionDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Permission;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.exception.PermissionServiceException;
-import sg.edu.nus.iss.edgp.admin.management.exception.RoleServiceException;
 import sg.edu.nus.iss.edgp.admin.management.repository.PermissionRepository;
 import sg.edu.nus.iss.edgp.admin.management.repository.RoleRepository;
-import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IPermissionService;
 import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 

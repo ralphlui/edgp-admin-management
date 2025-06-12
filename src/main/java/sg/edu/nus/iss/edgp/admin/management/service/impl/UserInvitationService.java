@@ -98,9 +98,10 @@ public class UserInvitationService implements IUserInvitationService {
 		} catch (Exception e) {
 
 			logger.error("Error occurred while find by token, " + e.toString());
+			
 		}
-
 		return null;
+
 	}
 
 	@Override

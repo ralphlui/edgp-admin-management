@@ -6,17 +6,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
-import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogResponseStatus;
 import sg.edu.nus.iss.edgp.admin.management.enums.HTTPVerb;
-import sg.edu.nus.iss.edgp.admin.management.repository.UserOrganizationRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
-import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;

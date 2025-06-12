@@ -21,6 +21,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
@@ -153,6 +154,25 @@ class UserControllerTest {
     }
     
     @Test
+    void testCreateUser_userNull() throws JsonProcessingException, Exception {
+    	 ValidationResult valid = new ValidationResult();
+         valid.setValid(true);
+         valid.setStatus(HttpStatus.OK);
+        when(userValidationStrategy.validateCreation(any(UserRequest.class), eq("")))
+                .thenReturn(valid);
+
+        when(userService.createUser(any(UserRequest.class))).thenReturn(null);
+        
+        mockMvc.perform(post("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userRequest)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false)); 
+
+ 
+    }
+    
+    @Test
     void testUpdateUser_success() throws Exception {
         ValidationResult valid = new ValidationResult();
         valid.setValid(true);
@@ -223,6 +243,89 @@ class UserControllerTest {
     }
     
     @Test
+    void testUpdateUser_userDTONull_returns500() throws Exception {
+    	 
+    	UserRequest userRequest = new UserRequest();
+    	userRequest.setEmail("test@example.com");
+
+    	ValidationResult validResult = new ValidationResult();
+    	validResult.setValid(true);
+    	validResult.setMessage("Validation passed");
+
+    	AuditDTO auditDTO = new AuditDTO();
+
+    	when(userValidationStrategy.validateUpdating(any(UserRequest.class), anyString()))
+    			.thenReturn(validResult);
+    	when(userService.updateUser(any(UserRequest.class))).thenReturn(null);
+    	when(auditService.createAuditDTO(any(), any(), any(), any(), any())).thenReturn(auditDTO);
+
+    	 
+    	mockMvc.perform(put("/api/admin/users")
+    			.contentType(MediaType.APPLICATION_JSON)
+    			.header("Authorization", "Bearer xyz")
+    			.header("X-User-Id", "123")
+    			.content(objectMapper.writeValueAsString(userRequest)))
+    			.andExpect(status().isInternalServerError())
+    			.andExpect(jsonPath("$.success").value(false))
+    			.andExpect(jsonPath("$.message").value("Validation passed"));
+
+    	verify(auditService).logAudit(eq(auditDTO), eq(500), eq("User updating is not successful"), eq(""));
+    }
+    
+    @Test
+    void testUpdateUser_validationFails_returns404() throws Exception {
+    	UserRequest userRequest = new UserRequest();
+    	userRequest.setEmail("invalid@example.com");
+
+    	ValidationResult invalidResult = new ValidationResult();
+    	invalidResult.setValid(false);
+    	invalidResult.setMessage("Invalid user input");
+
+    	when(userValidationStrategy.validateUpdating(any(UserRequest.class), anyString()))
+    			.thenReturn(invalidResult);
+    	 
+    	mockMvc.perform(put("/api/admin/users")
+    			.contentType(MediaType.APPLICATION_JSON)
+    			.header("Authorization", "Bearer xyz")
+    			.header("X-User-Id", "123")
+    			.content(objectMapper.writeValueAsString(userRequest)))
+    			.andExpect(status().isNotFound())
+    			.andExpect(jsonPath("$.success").value(false))
+    			.andExpect(jsonPath("$.message").value("Invalid user input"));
+
+    	
+    }
+
+    @Test
+    void testUpdateUser_exceptionThrown_returns500() throws Exception {
+    	UserRequest userRequest = new UserRequest();
+    	userRequest.setEmail("test@example.com");
+
+    	ValidationResult validResult = new ValidationResult();
+    	validResult.setValid(true);
+    	validResult.setMessage("Validation passed");
+ 
+
+    	when(userValidationStrategy.validateUpdating(any(UserRequest.class), anyString()))
+    			.thenReturn(validResult);
+    	 when(userService.updateUser(any(UserRequest.class)))
+    			.thenThrow(new RuntimeException("Simulated failure"));
+
+    	mockMvc.perform(put("/api/admin/users")
+    			.contentType(MediaType.APPLICATION_JSON)
+    			.header("Authorization", "Bearer xyz")
+    			.header("X-User-Id", "123")
+    			.content(objectMapper.writeValueAsString(userRequest)))
+    			.andExpect(status().isInternalServerError())
+    			.andExpect(jsonPath("$.success").value(false))
+    			.andExpect(jsonPath("$.message").value("Update User failed due to Simulated failure"));
+
+    	
+    }
+
+
+    
+    @Test
     void testCompleteRegistration_success() throws Exception {
         userRequest.setUserInvitationtoken("valid-token");
 
@@ -273,6 +376,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Invitation token  is invalid."));
     }
+    
 
     @Test
     void testCompleteRegistration_tokenExpiredOrUsed() throws Exception {

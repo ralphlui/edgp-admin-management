@@ -115,7 +115,7 @@ public class UserService implements IUserService{
 			return DTOMapper.toUserDTO(updateUser);
 		} catch (Exception e) {
 			logger.error("Error occurred while user updating", e);
-			e.printStackTrace();
+			
 			throw e;
 		}
 	}
@@ -139,7 +139,7 @@ public class UserService implements IUserService{
 			
 		} catch (Exception e) {
 			logger.error("Error occurred while checking specific active user", e);
-			e.printStackTrace();
+			
 			throw e;
 		}
 	}
@@ -261,7 +261,7 @@ public class UserService implements IUserService{
 			
 		} catch (Exception e) {
 			logger.error("Error occurred while checking specific active User, " + e.toString());
-			e.printStackTrace();
+			
 			throw e;
 		}
 	}
@@ -279,7 +279,7 @@ public class UserService implements IUserService{
 			
 		} catch (Exception e) {
 			logger.error("Error occurred while checking specific active User, " + e.toString());
-			e.printStackTrace();
+		
 			throw e;
 		}
 	}
@@ -357,7 +357,7 @@ public class UserService implements IUserService{
 
 		} catch (Exception e) {
 			logger.error("Error occurred while reset Password", e);
-			e.printStackTrace();
+			
 			throw e;
 		}
 	}
