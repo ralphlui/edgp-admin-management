@@ -94,8 +94,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	private void handleException(HttpServletResponse response, String message, int status, String token)
 			throws IOException {
+		String activityType = "Authentication-JWTValidation";
 		TokenErrorResponse.sendErrorResponse(response, message, status, "UnAuthorized");
-		AuditDTO auditDTO = auditLogService.createAuditDTO(userID, "", activityTypePrefix, apiEndpoint, httpMethod);
+		AuditDTO auditDTO = auditLogService.createAuditDTO(userID, activityType, activityTypePrefix, apiEndpoint, httpMethod);
 		auditLogService.logAudit(auditDTO, status, message, token);
 	}
 }
