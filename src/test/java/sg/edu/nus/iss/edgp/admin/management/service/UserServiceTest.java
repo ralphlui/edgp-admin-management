@@ -35,6 +35,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.configuration.AWSConfig;
+import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
