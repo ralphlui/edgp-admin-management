@@ -28,18 +28,24 @@ public class AuditService implements IAuditService {
 	public void sendMessage(AuditDTO autAuditDTO,String token) {
 
 		try {
-			String jwtToken = token.substring(7);
 			String userName = "Invalid Username";
+			String userID="";
 
-			if (!jwtToken.isEmpty()) {
+			if (!token.isEmpty()) {
+				
+				String jwtToken = token.substring(7);
+				
+				
 			   userName = Optional.ofNullable(jwtService.retrieveUserName(jwtToken))
 		                   .orElse("Invalid Username");
 			   autAuditDTO.setUsername(userName);
+			   userID = jwtService.extractUserIdAllowExpiredToken(jwtToken);
 
 			}
 			
 			if(autAuditDTO.getUsername().equals("")) {
 				autAuditDTO.setUsername("Invalid UserName");
+				autAuditDTO.setUserId(userID);
 			}
 
 			sqsPublishingService.sendMessage(autAuditDTO);
@@ -50,7 +56,7 @@ public class AuditService implements IAuditService {
 
 	}
 
-	public AuditDTO createAuditDTO(String userId, String activityType, String activityTypePrefix, String endpoint,
+	public AuditDTO createAuditDTO(String userId,String activityType, String activityTypePrefix, String endpoint,
 			HTTPVerb verb) {
 		AuditDTO auditDTO = new AuditDTO();
 		auditDTO.setActivityType(activityTypePrefix.trim() + activityType);

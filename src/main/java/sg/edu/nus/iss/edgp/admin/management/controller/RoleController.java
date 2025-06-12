@@ -65,8 +65,8 @@ public class RoleController {
 		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.POST;
 		 
-		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint, httpMethod);
-
+		AuditDTO auditDTO = auditService.createAuditDTO("Default", activityType, activityTypePrefix, endpoint, httpMethod);
+		
 		try {
 			 
 			ValidationResult validationResult = roleValidationStrategy.validateCreation(role, "");

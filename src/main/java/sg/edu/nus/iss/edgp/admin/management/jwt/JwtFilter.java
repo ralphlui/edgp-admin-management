@@ -96,7 +96,7 @@ public class JwtFilter extends OncePerRequestFilter {
 			throws IOException {
 		String activityType = "Authentication-JWTValidation";
 		TokenErrorResponse.sendErrorResponse(response, message, status, "UnAuthorized");
-		AuditDTO auditDTO = auditLogService.createAuditDTO(userID, activityType, activityTypePrefix, apiEndpoint, httpMethod);
+		AuditDTO auditDTO = auditLogService.createAuditDTO(userID,activityType, activityTypePrefix, apiEndpoint, httpMethod);
 		auditLogService.logAudit(auditDTO, status, message, token);
 	}
 }

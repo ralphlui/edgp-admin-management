@@ -78,7 +78,7 @@ public class UserController {
 		String endpoint = API_ENDPOINT;
 		HTTPVerb httpMethod = HTTPVerb.POST;
 
-		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+		AuditDTO auditDTO = auditService.createAuditDTO("Admin", activityType, activityTypePrefix, endpoint,
 				httpMethod);
 
 		try {
@@ -381,6 +381,8 @@ public class UserController {
 			if (!verifyid.isEmpty()) {
 				UserDTO verifiedUserDTO = userService.verifyUser(verifyid);
 				message = "User successfully verified.";
+				auditDTO.setUserId(verifiedUserDTO.getUserID());
+				auditDTO.setUsername(verifiedUserDTO.getUsername());
 				auditService.logAudit(auditDTO, 200, message, "");
 
 				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(verifiedUserDTO, message));
@@ -432,7 +434,9 @@ public class UserController {
 			message = userDTO.getEmail() + " login successfully";
 
 			HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO, null);
-
+			
+			auditDTO.setUserId(userDTO.getUserID());
+			auditDTO.setUsername(userDTO.getUsername());
 			auditService.logAudit(auditDTO, 200, message, "");
 			return ResponseEntity.status(HttpStatus.OK).headers(headers).body(APIResponse.success(userDTO, message));
 
@@ -459,9 +463,11 @@ public class UserController {
 				httpMethod);
 
 		try {
+			
 			User user = userService.findActiveUserByID(userID);
 
 			if (user == null) {
+				
 				message = "Active User not foud.";
 				logger.error("Active User not foud.");
 				auditService.logAudit(auditDTO, 404, message, authorizationHeader);
@@ -471,7 +477,7 @@ public class UserController {
 
 			UserDTO userDTO = userService.checkSpecificActiveUserByID(userID);
 			message = userDTO.getEmail() + " is Active";
-
+			
 			auditService.logAudit(auditDTO, 200, message, "");
 			return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, message));
 
@@ -515,6 +521,9 @@ public class UserController {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
 			}
+
+			auditDTO.setUserId(user.getUserID());
+			auditDTO.setUsername(user.getUsername());
 
 			String accessToken = jwtService.generateToken(user);
 
@@ -582,7 +591,8 @@ public class UserController {
 				message = "Token refresh is successful.";
 
 				refreshTokenService.updateRefreshToken(refreshToken, false);
-
+				auditDTO.setUserId(user.getUserId());
+				auditDTO.setUsername(user.getUsername());
 				auditService.logAudit(auditDTO, 200, message, "");
 				return ResponseEntity.status(HttpStatus.OK).headers(headers)
 						.body(APIResponse.successWithNoData(message));
@@ -666,6 +676,7 @@ public class UserController {
 
 		try {
 			userID = jwtService.extractUserIdAllowExpiredToken(tokenFromCookie);
+			auditDTO.setUserId(userID);
 			User user = userService.findByUserId(userID);
 
 			String refreshToken = cookieUtils.getTokenFromCookies(request, REFRESH_TOKEN_COOKIE).orElse(null);
@@ -675,7 +686,7 @@ public class UserController {
 			if (user != null) {
 
 				message = "User logout successfully";
-
+				
 				auditService.logAudit(auditDTO, 200, message, "");
 				return ResponseEntity.status(HttpStatus.OK).headers(headers)
 						.body(APIResponse.success(DTOMapper.toUserDTO(user), message));

@@ -76,7 +76,7 @@ class AuditServiceTest {
 
 		auditService.sendMessage(auditDTO, token);
 
-		assertEquals("Invalid UserName", auditDTO.getUsername());
+		assertEquals("Invalid Username", auditDTO.getUsername());
 		verify(sqsPublishingService).sendMessage(auditDTO);
 	}
 	
