@@ -16,7 +16,9 @@ public class DTOMapper {
 		roleDTO.setRoleId(role.getRoleId());
 		roleDTO.setRoleName(role.getRoleName());
 		roleDTO.setRoleDescription(role.getRoleDescription());
-		roleDTO.setStatus(role.isStatus());
+		
+		roleDTO.setStatus(role.isStatus() ? "Active" : "Deleted");
+	    
 		return roleDTO;
 		
 	}
@@ -46,6 +48,7 @@ public class DTOMapper {
 		UserInvitationDTO userInvitationDTO = new UserInvitationDTO();
 		userInvitationDTO.setEmail(userInvitation.getEmail());
 		userInvitationDTO.setRoleName(userInvitation.getRole().getRoleName());
+		userInvitationDTO.setStatus(userInvitation.isUsed() ? "Accepted" : "Pending");
 		return userInvitationDTO;
 				
 	}

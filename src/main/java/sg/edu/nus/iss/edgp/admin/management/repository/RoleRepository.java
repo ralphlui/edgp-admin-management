@@ -13,5 +13,9 @@ public interface RoleRepository extends JpaRepository<Role, String> {
 	List<Role> findByStatusTrue();
 	
 	Role findByRoleName(String roleName);
+	
+	long countByStatus(boolean status);
+	
+    List<Role> findAll();
 
 }

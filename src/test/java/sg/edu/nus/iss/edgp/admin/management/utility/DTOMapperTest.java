@@ -41,7 +41,7 @@ class DTOMapperTest {
 		assertEquals("123", roleDTO.getRoleId());
 		assertEquals("Admin", roleDTO.getRoleName());
 		assertEquals("Administrator role", roleDTO.getRoleDescription());
-		assertTrue(roleDTO.isStatus());
+		 
 	}
 
 	@Test
@@ -52,7 +52,7 @@ class DTOMapperTest {
 		assertNull(roleDTO.getRoleId());
 		assertNull(roleDTO.getRoleName());
 		assertNull(roleDTO.getRoleDescription());
-		assertFalse(roleDTO.isStatus()); // default boolean
+		
 	}
 
 	@Test

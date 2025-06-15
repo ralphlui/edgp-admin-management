@@ -77,6 +77,7 @@ public class RoleService implements IRoleService {
 		RoleDTO roleDTO = new RoleDTO();
 		try {
 			Role role = roleRepository.findByRoleName(roleName);
+			if(role != null)
 			roleDTO = DTOMapper.toRoleDTO(role);
 		} catch (Exception e) {
 			logger.error("findByRoleName exception... {}", e.toString());

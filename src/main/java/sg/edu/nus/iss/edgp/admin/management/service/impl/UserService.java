@@ -1,6 +1,7 @@
 package sg.edu.nus.iss.edgp.admin.management.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +18,10 @@ import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
+import sg.edu.nus.iss.edgp.admin.management.dto.UnifiedUserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserSummaryDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
@@ -63,7 +66,7 @@ public class UserService implements IUserService{
 			user.setUsername(userReq.getUsername());
 			String encodedPassword = passwordEncoder.encode(userReq.getPassword());
 			user.setPassword(encodedPassword);
-			//to modify
+			
 			user.setVerified(true);
 			String code = UUID.randomUUID().toString();
 			user.setVerificationCode(code);
@@ -235,6 +238,12 @@ public class UserService implements IUserService{
 			User user = userRepository.findByEmailAndIsActiveAndIsVerified(email, true, true);
 			if (user != null && passwordEncoder.matches(password, user.getPassword())) {
 				logger.info("User login is successful.");
+				
+				//Update Last login date
+				 user.setLastLoginDate(LocalDateTime.now());
+		         userRepository.save(user); // persist the updated login date
+
+				//
 				return DTOMapper.toUserDTO(user);
 			}
 			logger.error("User login is not successful.");
@@ -360,6 +369,85 @@ public class UserService implements IUserService{
 			
 			throw e;
 		}
+	}
+
+	@Override
+	public Map<Long, UserSummaryDTO> findUserSummary(Pageable pageable) {
+		Map<Long, UserSummaryDTO> result = new HashMap<>();
+		try {
+		List<User> users = userRepository.findAll();
+
+		LocalDateTime cutoff = LocalDateTime.now().minusDays(7);
+		List<UserInvitation> validInvites = userInvitationRepository.findValidPendingInvites(cutoff);
+		
+		long active = users.stream().filter(User::isActive).count();
+		long deleted = users.stream().filter(r -> !r.isActive()).count();
+		long pending = validInvites.size();
+		long total = active + deleted + pending;
+         
+        List<UnifiedUserDTO> unifiedList = new ArrayList<>();
+         
+
+        for (User u : users) {
+        	UnifiedUserDTO uDto = new UnifiedUserDTO();
+        	uDto.setId(u.getUserId());
+        	uDto.setUsername(u.getUsername());
+        	uDto.setEmail(u.getEmail());
+        	uDto.setRole(u.getRole().getRoleName());
+        	uDto.setStatus(u.isActive() ? "Active" : "Deleted");
+        	
+        	LocalDateTime lastLoginDate = u.getLastLoginDate();
+
+        	 
+        	String lastLogingFormattedDate = lastLoginDate != null 
+        	    ? lastLoginDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) 
+        	    : null;
+
+        	uDto.setLastLogin(lastLogingFormattedDate);
+        	 
+        	unifiedList.add(uDto);
+        	
+           
+        }
+        
+         
+        for (UserInvitation ui : validInvites) {
+        	UnifiedUserDTO uDto = new UnifiedUserDTO();
+        	uDto.setId(ui.getInviteId());
+        	uDto.setUsername(ui.getEmail());
+        	uDto.setEmail(ui.getEmail());
+        	uDto.setRole(ui.getRole().getRoleName());
+        	uDto.setStatus(ui.isUsed() ? "Accepted" : "Pending");
+        	uDto.setLastLogin("");
+        	 
+        	unifiedList.add(uDto);
+        	
+           
+        }
+      
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), unifiedList.size());
+        List<UnifiedUserDTO> pagedRoles = unifiedList.subList(start, end);
+
+        UserSummaryDTO summary = UserSummaryDTO.builder()
+        		 
+                .active(active)
+                .deleted(deleted)
+                .pending(pending)
+                .users(pagedRoles)
+                .build();
+        
+        result.put(total, summary);
+        
+		return result;
+         
+    
+		} catch (Exception e) {
+			logger.error("Error occurred while reteriving the all users", e);
+			
+			throw e;
+		}
+	 
 	}
 
 }

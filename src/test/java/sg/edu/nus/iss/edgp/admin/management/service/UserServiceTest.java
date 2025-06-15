@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +37,10 @@ import org.springframework.test.context.ActiveProfiles;
 import io.jsonwebtoken.JwtException;
 import sg.edu.nus.iss.edgp.admin.management.configuration.AWSConfig;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
+import sg.edu.nus.iss.edgp.admin.management.dto.UnifiedUserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserSummaryDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
@@ -674,6 +677,84 @@ class UserServiceTest {
         verify(jwtService).extractUserIdAllowExpiredToken("mock.jwt.token");
         verify(jwtService).extractUserNameAllowExpiredToken("mock.jwt.token");
     }  
+    
+    @Test
+    void testFindUserSummary_success() {
+ 
+        Role role = new Role();
+        role.setRoleName("Admin");
 
+        User activeUser = new User();
+        activeUser.setUserId("u1");
+        activeUser.setUsername("ActiveUser");
+        activeUser.setEmail("active@example.com");
+        activeUser.setActive(true);
+        activeUser.setRole(role);
+        activeUser.setLastLoginDate(LocalDateTime.of(2025, 6, 8, 15, 52, 45));
+
+        User deletedUser = new User();
+        deletedUser.setUserId("u2");
+        deletedUser.setUsername("DeletedUser");
+        deletedUser.setEmail("deleted@example.com");
+        deletedUser.setActive(false);
+        deletedUser.setRole(role);
+        deletedUser.setLastLoginDate(null);
+
+        List<User> users = Arrays.asList(activeUser, deletedUser);
+        when(userRepository.findAll()).thenReturn(users);
+ 
+        UserInvitation invitation = new UserInvitation();
+        invitation.setInviteId("inv1");
+        invitation.setEmail("pending@example.com");
+        invitation.setRole(role);
+        invitation.setUsed(false);
+        invitation.setInvitedDate(LocalDateTime.now().minusDays(1));
+
+        List<UserInvitation> invitations = List.of(invitation);
+        when(userInvitationRepository.findValidPendingInvites(any())).thenReturn(invitations);
+
+      
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Map<Long, UserSummaryDTO> result = userService.findUserSummary(pageable);
+ 
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        Map.Entry<Long, UserSummaryDTO> entry = result.entrySet().iterator().next();
+
+        assertEquals(3L, entry.getKey()); 
+        UserSummaryDTO summary = entry.getValue();
+
+        assertEquals(1, summary.getActive());
+        assertEquals(1, summary.getDeleted());
+        assertEquals(1, summary.getPending());
+        assertEquals(3, summary.getUsers().size());
+
+        UnifiedUserDTO activeUserDto = summary.getUsers().stream()
+                .filter(u -> u.getId().equals("u1"))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(activeUserDto);
+        assertEquals("Active", activeUserDto.getStatus());
+        assertEquals("2025-06-08", activeUserDto.getLastLogin());
+    }
+
+    @Test
+    void testFindUserSummary_exceptionThrown() {
+     
+        when(userRepository.findAll()).thenThrow(new RuntimeException("DB access failed"));
+
+        Pageable pageable = PageRequest.of(0, 10);
+ 
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            userService.findUserSummary(pageable);
+        });
+
+        assertEquals("DB access failed", exception.getMessage());
+
+        
+    }
 
 }

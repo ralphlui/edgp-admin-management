@@ -25,9 +25,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
+import sg.edu.nus.iss.edgp.admin.management.dto.UnifiedUserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserInvitationDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserSummaryDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.ValidationResult;
 import sg.edu.nus.iss.edgp.admin.management.entity.RefreshToken;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
@@ -427,7 +429,7 @@ class UserControllerTest {
 
         when(userService.findActiveUsers(any())).thenReturn(resultMap);
 
-        mockMvc.perform(get("/api/admin/users")
+        mockMvc.perform(get("/api/admin/users/active")
                 .param("page", "0")
                 .param("size", "10")
                 .header("Authorization", "Bearer token"))
@@ -443,7 +445,7 @@ class UserControllerTest {
 
         when(userService.findActiveUsers(any())).thenReturn(resultMap);
 
-        mockMvc.perform(get("/api/admin/users")
+        mockMvc.perform(get("/api/admin/users/active")
                 .param("page", "0")
                 .param("size", "10")
                 .header("Authorization", "Bearer token"))
@@ -457,7 +459,7 @@ class UserControllerTest {
     void testGetAllActiveUsers_exception() throws Exception {
         when(userService.findActiveUsers(any())).thenThrow(new RuntimeException("Unexpected error"));
 
-        mockMvc.perform(get("/api/admin/users")
+        mockMvc.perform(get("/api/admin/users/active")
                 .param("page", "0")
                 .param("size", "10")
                 .header("Authorization", "Bearer token"))
@@ -767,5 +769,83 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("An unexpected error occurred. Please contact support."));
     }
+    
+    @Test
+    void testGetAllUsers_success() throws Exception {
+ 
+        UnifiedUserDTO userDTO = new UnifiedUserDTO();
+        userDTO.setId("u1");
+        userDTO.setUsername("john");
+        userDTO.setEmail("test@example.com");
+        userDTO.setRole("Admin");
+        userDTO.setStatus("Active");
+        userDTO.setLastLogin("2025-06-08");
+
+        UserSummaryDTO summary = UserSummaryDTO.builder()
+                .active(1)
+                .deleted(0)
+                .pending(0)
+                .users(Collections.singletonList(userDTO))
+                .build();
+
+        Map<Long, UserSummaryDTO> resultMap = new LinkedHashMap<>();
+        resultMap.put(1L, summary);
+
+        when(auditService.createAuditDTO(any(), any(), any(), any(), any()))
+                .thenReturn(new AuditDTO());
+
+        when(userService.findUserSummary(any())).thenReturn(resultMap);
+
+  
+        mockMvc.perform(get("/api/admin/users")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", "Bearer token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.totalRecord").value(1))
+                .andExpect(jsonPath("$.data.active").value(1))
+                .andExpect(jsonPath("$.data.users[0].email").value("test@example.com"));
+    }
+    
+    @Test
+    void testGetAllUsers_emptyList_returnsNoList() throws Exception {
+        
+        when(auditService.createAuditDTO(any(), any(), any(), any(), any()))
+                .thenReturn(new AuditDTO());
+
+        Map<Long, UserSummaryDTO> emptyMap = new LinkedHashMap<>();
+        emptyMap.put(1L, null);  
+        when(userService.findUserSummary(any())).thenReturn(emptyMap);
+ 
+        mockMvc.perform(get("/api/admin/users")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", "Bearer token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("No Users Found."));
+    }
+    
+    
+    @Test
+    void testGetAllUsers_exceptionThrown_returnsInternalServerError() throws Exception {
+ 
+        when(auditService.createAuditDTO(any(), any(), any(), any(), any()))
+                .thenReturn(new AuditDTO());
+
+        when(userService.findUserSummary(any()))
+                .thenThrow(new RuntimeException("DB failure"));
+ 
+        mockMvc.perform(get("/api/admin/users")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", "Bearer token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("DB failure")));
+    }
+
+
 }    
 

@@ -9,5 +9,6 @@ public class UserInvitationDTO {
 
 	private String email;
 	private String roleName;
+	private String status;
 
 }

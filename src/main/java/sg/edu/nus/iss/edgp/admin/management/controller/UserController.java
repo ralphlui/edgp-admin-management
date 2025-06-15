@@ -310,7 +310,7 @@ public class UserController {
 
 	}
 
-	@GetMapping(value = "", produces = "application/json")
+	@GetMapping(value = "/active", produces = "application/json")
 	public ResponseEntity<APIResponse<List<UserDTO>>> getAllActiveUsers(
 			@RequestHeader("Authorization") String authorizationHeader,
 			@Valid @ModelAttribute SearchRequest searchRequest) {
@@ -708,5 +708,56 @@ public class UserController {
 		}
 
 	}
+	
+	
+	@GetMapping(value = "", produces = "application/json")
+	public ResponseEntity<APIResponse<UserSummaryDTO>> getAllUsers(
+			@RequestHeader("Authorization") String authorizationHeader,
+			@Valid @ModelAttribute SearchRequest searchRequest) {
+		logger.info("Call user get all User API with page={}, size={}", searchRequest.getPage(), searchRequest.getSize());
+		String message = "";
+		String activityType = "Authentication-RetrieveAllUsers";
+		String endpoint = API_ENDPOINT;
+		HTTPVerb httpMethod = HTTPVerb.GET;
+		message = "Retreving all user list is failed due to ";
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
+		try {
+
+			Pageable pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize(),
+					Sort.by("username").ascending());
+			Map<Long, UserSummaryDTO> resultMap = userService.findUserSummary(pageable);
+			logger.info("all active user list size {}", resultMap.size());
+
+			Map.Entry<Long, UserSummaryDTO> firstEntry = resultMap.entrySet().iterator().next();
+			long totalRecord = firstEntry.getKey();
+			UserSummaryDTO users = firstEntry.getValue();
+ 
+
+			if (users != null) {
+				message = "Successfully get all user";
+
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(users, message, totalRecord));
+
+			} else {
+				message = "No Users Found.";
+				auditService.logAudit(auditDTO, 200, message, authorizationHeader);
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.noList(users, message));
+
+			}
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
+
+		}
+	}
+
 
 }

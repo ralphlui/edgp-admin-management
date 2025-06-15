@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserRequest;
+import sg.edu.nus.iss.edgp.admin.management.dto.UserSummaryDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 
 public interface IUserService {
@@ -34,5 +35,7 @@ public interface IUserService {
      UserDTO checkSpecificActiveUserByID(String userId);
 	 
      UserDTO checkSpecificActiveUserByEmail(String email);
+     
+     Map<Long,UserSummaryDTO>findUserSummary(Pageable pageable);
 	
 }

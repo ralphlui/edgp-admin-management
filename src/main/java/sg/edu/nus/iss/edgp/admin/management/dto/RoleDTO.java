@@ -10,6 +10,6 @@ public class RoleDTO {
 	private String roleId;
 	private String roleName;
 	private String roleDescription;
-	private boolean status;
+	private String status;
 
 }
