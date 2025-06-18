@@ -298,10 +298,13 @@ public class UserService implements IUserService{
 		try {
 			Optional<UserInvitation> userInvitation = userInvitationRepository.findByToken(userReq.getUserInvitationtoken());
 			if(userInvitation.isPresent()) {
-				String createdBy = jwtService.getUserIdByAuthHeader(authorizationHeader);
+				 
+				 
 				User user = new  User();
 				user.setUsername(userReq.getUsername());
-				user.setPassword(userReq.getPassword());
+				String encodedPassword = passwordEncoder.encode(userReq.getPassword());
+				user.setPassword(encodedPassword);
+				
 				user.setEmail(userInvitation.get().getEmail());
 				user.setActive(true);
 				user.setVerified(true);
@@ -309,7 +312,7 @@ public class UserService implements IUserService{
 				user.setVerificationCode(code);
 				Role role = roleRepository.findByRoleName(userInvitation.get().getRole().getRoleName());
 				user.setRole(role);
-				user.setCreatedBy(createdBy);
+				 
 				user.setCreatedDate(LocalDateTime.now());
 				 
 				logger.info("Create User...");
@@ -326,7 +329,7 @@ public class UserService implements IUserService{
 				userOrg.setOrganizationId(userInvitation.get().getOrganizationId());
 				userOrg.setRole(role);
 				userOrg.setActive(true);
-				userOrg.setCreatedBy(createdBy);
+				userOrg.setCreatedBy(createdUser.getUserId());
 				userOrg.setCreatedDate(LocalDateTime.now());
 				
 				

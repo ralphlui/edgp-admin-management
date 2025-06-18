@@ -229,7 +229,7 @@ public class UserController {
 
 	@PostMapping(value = "/complete-registration", produces = "application/json")
 	public ResponseEntity<APIResponse<UserDTO>> completeRegistration(
-			@RequestHeader("Authorization") String authorizationHeader, @RequestBody UserRequest userRequest) {
+			 @RequestBody UserRequest userRequest) {
 		String token = userRequest.getUserInvitationtoken();
 		logger.info("Call complete registration API with user invitation Token");
 		token = GeneralUtility.makeNotNull(token);
@@ -251,7 +251,7 @@ public class UserController {
 
 				if (invitation == null) {
 					message = "Invitation token  is invalid.";
-					auditService.logAudit(auditDTO, 400, message, authorizationHeader);
+					auditService.logAudit(auditDTO, 400, message, "");
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
 
 				}
@@ -259,7 +259,7 @@ public class UserController {
 				if (invitation.isUsed() || invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
 
 					message = "Invitation token has expired or already been used.";
-					auditService.logAudit(auditDTO, 403, message, authorizationHeader);
+					auditService.logAudit(auditDTO, 403, message, "");
 					return ResponseEntity.status(HttpStatus.FORBIDDEN).body(APIResponse.error(message));
 
 				}
@@ -269,11 +269,11 @@ public class UserController {
 				if (validationResult.isValid()) {
 
 					message = "User already exists.";
-					auditService.logAudit(auditDTO, 409, message, authorizationHeader);
+					auditService.logAudit(auditDTO, 409, message, "");
 					return ResponseEntity.status(HttpStatus.CONFLICT).body(APIResponse.error(message));
 				}
 
-				UserDTO activatedUser = userService.accountActivate(userRequest, authorizationHeader);
+				UserDTO activatedUser = userService.accountActivate(userRequest, "");
 				if (activatedUser != null) {
 					UserInvitationDTO userInvitationDTO = userInvitationService.updateInvitation(userRequest);
 
@@ -293,7 +293,7 @@ public class UserController {
 
 			} else {
 
-				message = "Token could not be blank.";
+				message = "Invitation Token could not be blank.";
 				logger.error(message);
 
 				auditService.logAudit(auditDTO, 400, message, "");

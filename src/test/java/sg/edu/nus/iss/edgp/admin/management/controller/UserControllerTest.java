@@ -356,12 +356,11 @@ class UserControllerTest {
         userRequest.setUserInvitationtoken("");
 
         mockMvc.perform(post("/api/admin/users/complete-registration")
-                .header("Authorization", "Bearer token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Token could not be blank."));
+                .andExpect(jsonPath("$.message").value("Invitation Token could not be blank."));
     }
 
     @Test
@@ -371,7 +370,7 @@ class UserControllerTest {
         when(userInvitationService.findByTokenAndEmail(any(), any())).thenReturn(null);
 
         mockMvc.perform(post("/api/admin/users/complete-registration")
-                .header("Authorization", "Bearer token")
+               
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequest)))
                 .andExpect(status().isBadRequest())
@@ -391,7 +390,7 @@ class UserControllerTest {
         when(userInvitationService.findByTokenAndEmail(any(), any())).thenReturn(expiredInvitation);
 
         mockMvc.perform(post("/api/admin/users/complete-registration")
-                .header("Authorization", "Bearer token")
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequest)))
                 .andExpect(status().isForbidden())
@@ -413,7 +412,7 @@ class UserControllerTest {
         when(userValidationStrategy.validateObject(anyString())).thenReturn(valid);
 
         mockMvc.perform(post("/api/admin/users/complete-registration")
-                .header("Authorization", "Bearer token")
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequest)))
                 .andExpect(status().isConflict())

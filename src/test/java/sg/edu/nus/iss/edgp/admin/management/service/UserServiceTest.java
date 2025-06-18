@@ -540,7 +540,7 @@ class UserServiceTest {
         mockUserDTO.setUsername("john");
 
         when(userInvitationRepository.findByToken("invitationToken")).thenReturn(Optional.of(userInvitation));
-        when(jwtService.getUserIdByAuthHeader(authorizationHeader)).thenReturn("adminUserId");
+       
         when(roleRepository.findByRoleName("OrgAdmin")).thenReturn(role);
         when(userRepository.save(any(User.class))).thenReturn(createdUser);
         when(userOrganizationRepository.save(any(UserOrganization.class))).thenReturn(createdUserOrg);
@@ -582,15 +582,14 @@ class UserServiceTest {
         userInvitation.setRole(role);
 
         when(userInvitationRepository.findByToken("validToken")).thenReturn(Optional.of(userInvitation));
-        when(jwtService.getUserIdByAuthHeader("Bearer token")).thenReturn("adminUserId");
- 
+       
         when(roleRepository.findByRoleName("OrgAdmin")).thenThrow(new RuntimeException("Simulated failure"));
 
         UserDTO result = userService.accountActivate(userReq, "Bearer token");
 
         assertNull(result);
         verify(userInvitationRepository).findByToken("validToken");
-        verify(jwtService).getUserIdByAuthHeader("Bearer token");
+       
         verify(roleRepository).findByRoleName("OrgAdmin");
     }
 
