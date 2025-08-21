@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
+import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UnifiedUserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserInvitationDTO;
@@ -37,6 +38,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
@@ -80,6 +82,9 @@ class UserControllerTest {
 
     @MockitoBean
     private RefreshTokenService refreshTokenService;
+    
+    @MockitoBean
+    private PermissionService permissionService;
 
     @MockitoBean
     private AuditService auditService;
@@ -509,23 +514,42 @@ class UserControllerTest {
     
     @Test
     void testLoginUser_success() throws Exception {
+        
+        UserRequest userRequest = new UserRequest();
+        userRequest.setEmail("test@example.com");
+        userRequest.setPassword("pw");
+
+         
+        UserDTO userDTO = new UserDTO();
+        userDTO.setEmail("test@example.com");
+        userDTO.setUserID("u-123");
+        userDTO.setUsername("Test User");
+
+        Role role = new Role();
+        role.setRoleName("ADMIN");   
+        userDTO.setRole(role);
+
         ValidationResult validationResult = new ValidationResult();
         validationResult.setValid(true);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Set-Cookie", "access_token=token");
 
-        when(userValidationStrategy.validateObject(userRequest.getEmail())).thenReturn(validationResult);
+        List<String> scopesFromDb = List.of("read", "write");
+
+        when(userValidationStrategy.validateObject(eq("test@example.com"))).thenReturn(validationResult);
         when(userService.loginUser(any(), any())).thenReturn(userDTO);
+        when(permissionService.findScopesByRole(any())).thenReturn(scopesFromDb);
         when(cookieUtils.buildAuthHeadersWithCookies(any(), any())).thenReturn(headers);
 
         mockMvc.perform(post("/api/admin/users/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("test@example.com login successfully"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.message").value("test@example.com login successfully"));
     }
+
 
     @Test
     void testLoginUser_invalidValidation() throws Exception {
