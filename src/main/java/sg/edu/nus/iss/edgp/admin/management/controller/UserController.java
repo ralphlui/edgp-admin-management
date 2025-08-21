@@ -1,8 +1,10 @@
 package sg.edu.nus.iss.edgp.admin.management.controller;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserInvitationService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.UserService;
@@ -55,6 +58,7 @@ public class UserController {
 	private final JWTService jwtService;
 	private final CookieUtils cookieUtils;
 	private final RefreshTokenService refreshTokenService;
+	private final PermissionService permissionService;
 
 	private final AuditService auditService;
 
@@ -434,6 +438,11 @@ public class UserController {
 			message = userDTO.getEmail() + " login successfully";
 
 			HttpHeaders headers = cookieUtils.buildAuthHeadersWithCookies(userDTO, null);
+			
+			List<String> scopesFromDb = permissionService.findScopesByRole(userDTO.getRole().getRoleName());
+			Set<String> scopes = new HashSet<>(scopesFromDb);
+			String scopesStr = String.join(" ", scopes);
+			userDTO.setScope(scopesStr);
 			
 			auditDTO.setUserId(userDTO.getUserID());
 			auditDTO.setUsername(userDTO.getUsername());

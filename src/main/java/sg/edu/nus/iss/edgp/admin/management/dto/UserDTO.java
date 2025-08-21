@@ -14,6 +14,6 @@ public class UserDTO {
 	private Role role;
 	private boolean isActive;
 	private boolean isVerified;
-    
+    private String scope;
     
 }
