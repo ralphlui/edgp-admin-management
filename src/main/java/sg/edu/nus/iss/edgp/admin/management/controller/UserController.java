@@ -29,6 +29,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.RefreshToken;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.enums.AuditLogInvalidUser;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.ApiKeyService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
@@ -59,6 +60,7 @@ public class UserController {
 	private final CookieUtils cookieUtils;
 	private final RefreshTokenService refreshTokenService;
 	private final PermissionService permissionService;
+	private final ApiKeyService apiKeyService;
 
 	private final AuditService auditService;
 
@@ -500,7 +502,7 @@ public class UserController {
 	}
 
 	@GetMapping(value = "/accessToken", produces = "application/json")
-	public ResponseEntity<APIResponse<JWTDTO>> generateAccessToken(@RequestHeader("X-User-Email") String email) {
+	public ResponseEntity<APIResponse<JWTDTO>> generateAccessTokenForNormalUser(@RequestHeader("X-User-Email") String email) {
 
 		String message = "";
 		String activityType = "Authentication-AccessToken";
@@ -561,6 +563,70 @@ public class UserController {
 					.body(APIResponse.error(message + e.getMessage()));
 		}
 
+	}
+	
+	
+	@GetMapping(value = "/externalAccessToken", produces = "application/json")
+	public ResponseEntity<APIResponse<JWTDTO>> generateAccessTokenForExternalUser(
+			@RequestHeader("X-API-Key") String apiKey) {
+
+		String message = "";
+		String activityType = "Authentication-AccessToken-ForExternalUser";
+		String endpoint = API_ENDPOINT + "/externalAccessToken";
+		HTTPVerb httpMethod = HTTPVerb.GET;
+		message = "Requesting new access token is failed due to ";
+
+		AuditDTO auditDTO = auditService.createAuditDTO(INVALID_USER_ID, activityType, activityTypePrefix, endpoint,
+				httpMethod);
+
+		try {
+
+			if (GeneralUtility.makeNotNull(apiKey).equals("")) {
+				message = "Invalid External API Key.";
+				logger.info("Requesting access Token: {}", message);
+
+				auditService.logAudit(auditDTO, 404, message, "");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(message));
+			}
+
+			// find ordID
+			String orgID = apiKeyService.retrieveOrgIdByApiKey(apiKey);
+			if (orgID == null) {
+				message = "Invalid org ID while retreiving by api key.";
+				auditService.logAudit(auditDTO, 400, message, "");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
+
+			}
+
+			auditDTO.setUserId(apiKey);
+			auditDTO.setUsername(apiKey);
+
+			String accessToken = jwtService.generateAccessTokenForExternalUser(apiKey, orgID);
+
+			if (accessToken != null) {
+
+				message = "Access token generated successfully.";
+				JWTDTO jwtDTO = new JWTDTO();
+				jwtDTO.setToken(accessToken);
+				auditService.logAudit(auditDTO, 200, message, "");
+				return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(jwtDTO, message));
+
+			} else {
+
+				message = "Failed to generate token.";
+				logger.info("Requesting access Token: {}", message);
+				auditService.logAudit(auditDTO, 401, message, "");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(message));
+
+			}
+
+		} catch (Exception e) {
+			logger.error(LOG_MESSAGE_FORMAT, message, e.getMessage());
+			auditDTO.setRemarks(e.getMessage());
+			auditService.logAudit(auditDTO, 500, message, "");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(APIResponse.error(message + e.getMessage()));
+		}
 	}
 
 	@PostMapping(value = "/refreshToken", produces = "application/json")

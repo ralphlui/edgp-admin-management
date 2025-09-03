@@ -225,6 +225,31 @@ public class JWTService {
 				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
 	}
 	
+	
+
+	public String generateAccessTokenForExternalUser(String apiKey, String ordId) throws InvalidKeyException, Exception {
+
+		long tokenValidDuration;
+
+		// Check if pentest is enabled and adjust token validity to 30 minutes
+		if (pentestEnable.equalsIgnoreCase("true")) {
+			tokenValidDuration = System.currentTimeMillis() + 30 * 60 * 1000;
+		} // 24 hours for refresh token // 15 minutes for normal token
+		else if (demoEnable.equalsIgnoreCase("true")) {
+			tokenValidDuration = System.currentTimeMillis() + 5 * 60 * 1000;
+		} else {
+			tokenValidDuration = System.currentTimeMillis() + 8 * 60 * 60 * 1000;
+		}
+
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("apiKey", apiKey);
+		claims.put("orgId", ordId);
+		claims.put("scope", "view:policy");
+
+		return Jwts.builder().claims().add(claims).subject(apiKey).issuedAt(new Date(System.currentTimeMillis()))
+				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
+	}
+	
 	public UserDetails getUserDetail(String token) throws JwtException, IllegalArgumentException, Exception {
 		String userID = extractUserID(token);
 		User user = context.getBean(UserService.class).findActiveUserByID(userID);
