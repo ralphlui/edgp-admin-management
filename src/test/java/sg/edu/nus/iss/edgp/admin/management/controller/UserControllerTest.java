@@ -37,6 +37,7 @@ import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 import sg.edu.nus.iss.edgp.admin.management.jwt.JWTService;
+import sg.edu.nus.iss.edgp.admin.management.service.impl.ApiKeyService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.AuditService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.PermissionService;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.RefreshTokenService;
@@ -88,6 +89,10 @@ class UserControllerTest {
 
     @MockitoBean
     private AuditService auditService;
+    
+    @MockitoBean
+    private ApiKeyService apiKeyService;
+    
 
     private UserRequest userRequest;
     private UserDTO userDTO;
@@ -868,6 +873,66 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("DB failure")));
     }
+    
+	@Test
+	void testGenerateAccessToken_external_success() throws Exception {
+
+		String apiKey = "ext-123";
+		String orgId = "ORG-9";
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
+		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenReturn("mocked.jwt.token");
+
+		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
+				.andExpect(jsonPath("$.message").value("Access token generated successfully."))
+				.andExpect(jsonPath("$.data.token").value("mocked.jwt.token"));
+	}
+
+	@Test
+	void testGenerateAccessToken_external_blankKey_404() throws Exception {
+
+		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", ""))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message").value("Invalid External API Key."));
+	}
+
+	@Test
+	void testGenerateAccessToken_external_invalidOrg_400() throws Exception {
+
+		String apiKey = "ext-no-org";
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(null);
+
+		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message").value("Invalid org ID while retreiving by api key."));
+	}
+
+	@Test
+	void testGenerateAccessToken_external_tokenNull_401() throws Exception {
+
+		String apiKey = "ext-401";
+		String orgId = "ORG-1";
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
+		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenReturn(null);
+
+		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+				.andExpect(status().isUnauthorized()).andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message").value("Failed to generate token."));
+	}
+
+	@Test
+	void testGenerateAccessToken_external_exception_500() throws Exception {
+
+		String apiKey = "ext-boom";
+		String orgId = "ORG-2";
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
+		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenThrow(new RuntimeException("kaboom"));
+
+		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+				.andExpect(status().isInternalServerError()).andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message")
+						.value(org.hamcrest.Matchers.containsString("Requesting new access token is failed due to")));
+	}
 
 
 }    
