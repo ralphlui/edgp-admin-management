@@ -1,13 +1,10 @@
 package sg.edu.nus.iss.edgp.admin.management.entity;
 
-import java.util.UUID;
-
-import org.springframework.data.annotation.Id;
+import org.hibernate.annotations.UuidGenerator;
+import jakarta.persistence.Id;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,10 +16,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiKeyOrgMap {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID apiKeyOrgMapId;
+	
+	@Id
+	@UuidGenerator(style = UuidGenerator.Style.AUTO)
+	private String apiKeyOrgMapId;
 
     @Column(nullable = false, unique = true)
     private String apiKey;
