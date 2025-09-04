@@ -29,9 +29,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import java.lang.reflect.Field;
-
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
@@ -189,4 +191,63 @@ public class JWTServiceTest {
 		String userId = jwtService.extractUserNameAllowExpiredToken(expiredToken);
 		assertEquals("ExpiredUser", userId);
     }
+    
+   
+	@Test
+	void generateAccessTokenForExternalUser_demoMode_expiryIs5Min() throws Exception {
+		// switch flags: pentest=false, demo=true
+		setPrivateField(jwtService, "pentestEnable", "false");
+		setPrivateField(jwtService, "demoEnable", "true");
+
+		String token = jwtService.generateAccessTokenForExternalUser("demo-key", "ORG-DEMO");
+
+		var publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey()); // note: method name as in your setup
+		var claims = Jwts.parser().verifyWith(publicKey).build().parseSignedClaims(token).getPayload();
+
+		assertEquals("demo-key", claims.getSubject());
+		assertEquals("view:policy", claims.get("scope"));
+		assertTrue(claims.getExpiration().after(claims.getIssuedAt()));
+	}
+
+	@Test
+	void generateAccessTokenForExternalUser_defaultMode_expiryIs8Hours() throws Exception {
+		// switch flags: pentest=false, demo=false
+		setPrivateField(jwtService, "pentestEnable", "false");
+		setPrivateField(jwtService, "demoEnable", "false");
+
+		String token = jwtService.generateAccessTokenForExternalUser("prod-key", "ORG-PROD");
+
+		var publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey());
+		var claims = Jwts.parser().verifyWith(publicKey).build().parseSignedClaims(token).getPayload();
+
+		assertEquals("prod-key", claims.getSubject());
+		assertEquals("view:policy", claims.get("scope"));
+		assertTrue(claims.getExpiration().after(claims.getIssuedAt()));
+
+	}
+
+	@Test
+	void generateAccessTokenForExternalUser_containsRS256Signature() throws Exception {
+
+		String token = jwtService.generateAccessTokenForExternalUser("k", "ORG");
+		assertTrue(token.split("\\.").length == 3, "JWT should have 3 segments");
+
+		PublicKey publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey());
+		// Will throw if signature invalid
+		Claims claims = Jwts.parser().verifyWith(publicKey).build().parseSignedClaims(token).getPayload();
+		assertNotNull(claims);
+	}
+
+	private static PublicKey decodePublicKey(String base64) throws Exception {
+		byte[] der = Base64.getDecoder().decode(base64);
+		X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
+		return KeyFactory.getInstance("RSA").generatePublic(spec);
+	}
+
+	private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
+		var f = target.getClass().getDeclaredField(fieldName);
+		f.setAccessible(true);
+		f.set(target, value);
+	}
+
 }
