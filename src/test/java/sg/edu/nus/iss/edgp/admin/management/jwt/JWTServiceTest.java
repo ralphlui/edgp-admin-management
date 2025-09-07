@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
@@ -199,7 +200,18 @@ public class JWTServiceTest {
 		setPrivateField(jwtService, "pentestEnable", "false");
 		setPrivateField(jwtService, "demoEnable", "true");
 
-		String token = jwtService.generateAccessTokenForExternalUser("demo-key", "ORG-DEMO");
+		String apiKey = "demo-key";
+		String orgId = "ORG-DEMO";
+		String email = "test2@gmail.com";
+		String scope = "view:policy";
+
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+		
+		String token = jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO);
 
 		var publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey()); // note: method name as in your setup
 		var claims = Jwts.parser().verifyWith(publicKey).build().parseSignedClaims(token).getPayload();
@@ -214,8 +226,19 @@ public class JWTServiceTest {
 		// switch flags: pentest=false, demo=false
 		setPrivateField(jwtService, "pentestEnable", "false");
 		setPrivateField(jwtService, "demoEnable", "false");
+		
+		String apiKey = "prod-key";
+		String orgId = "ORG-PROD";
+		String email = "test2@gmail.com";
+		String scope = "view:policy";
 
-		String token = jwtService.generateAccessTokenForExternalUser("prod-key", "ORG-PROD");
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+
+		String token = jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO);
 
 		var publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey());
 		var claims = Jwts.parser().verifyWith(publicKey).build().parseSignedClaims(token).getPayload();
@@ -228,8 +251,19 @@ public class JWTServiceTest {
 
 	@Test
 	void generateAccessTokenForExternalUser_containsRS256Signature() throws Exception {
+		
+		String apiKey = "k";
+		String orgId = "ORG";
+		String email = "test2@gmail.com";
+		String scope = "view:policy";
 
-		String token = jwtService.generateAccessTokenForExternalUser("k", "ORG");
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+
+		String token = jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO);
 		assertTrue(token.split("\\.").length == 3, "JWT should have 3 segments");
 
 		PublicKey publicKey = decodePublicKey(jwtConfig.getJWTPubliceKey());
