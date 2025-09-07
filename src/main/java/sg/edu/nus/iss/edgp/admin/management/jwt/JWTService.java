@@ -20,6 +20,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.InvalidKeyException;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.configuration.JWTConfig;
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
 import sg.edu.nus.iss.edgp.admin.management.entity.UserOrganization;
@@ -227,7 +228,7 @@ public class JWTService {
 	
 	
 
-	public String generateAccessTokenForExternalUser(String apiKey, String ordId) throws InvalidKeyException, Exception {
+	public String generateAccessTokenForExternalUser(ApiKeyOrgMapDTO apiKeyOrgMapDTO) throws InvalidKeyException, Exception {
 
 		long tokenValidDuration;
 
@@ -242,11 +243,12 @@ public class JWTService {
 		}
 
 		Map<String, Object> claims = new HashMap<>();
-		claims.put("apiKey", apiKey);
-		claims.put("orgId", ordId);
-		claims.put("scope", "view:policy");
+		claims.put("apiKey", apiKeyOrgMapDTO.getApiKey());
+		claims.put("orgId", apiKeyOrgMapDTO.getOrgId());
+		claims.put("scope", apiKeyOrgMapDTO.getScope());
+		claims.put("userEmail", apiKeyOrgMapDTO.getEmail());
 
-		return Jwts.builder().claims().add(claims).subject(apiKey).issuedAt(new Date(System.currentTimeMillis()))
+		return Jwts.builder().claims().add(claims).subject(apiKeyOrgMapDTO.getApiKey()).issuedAt(new Date(System.currentTimeMillis()))
 				.expiration(new Date(tokenValidDuration)).and().signWith(loadPrivateKey(), Jwts.SIG.RS256).compact();
 	}
 	

@@ -1,9 +1,11 @@
 package sg.edu.nus.iss.edgp.admin.management.utility;
 
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.PermissionDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UserInvitationDTO;
+import sg.edu.nus.iss.edgp.admin.management.entity.ApiKeyOrgMap;
 import sg.edu.nus.iss.edgp.admin.management.entity.Permission;
 import sg.edu.nus.iss.edgp.admin.management.entity.Role;
 import sg.edu.nus.iss.edgp.admin.management.entity.User;
@@ -50,6 +52,16 @@ public class DTOMapper {
 		userInvitationDTO.setRoleName(userInvitation.getRole().getRoleName());
 		userInvitationDTO.setStatus(userInvitation.isUsed() ? "Accepted" : "Pending");
 		return userInvitationDTO;
+				
+	}
+	
+	public static ApiKeyOrgMapDTO toApiKeyOrgMapDTO(ApiKeyOrgMap apiKeyOrgMap) {
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKeyOrgMap.getApiKey());
+		apiKeyOrgMapDTO.setEmail(apiKeyOrgMap.getEmail());
+		apiKeyOrgMapDTO.setOrgId(apiKeyOrgMap.getOrgId());
+		apiKeyOrgMapDTO.setScope(apiKeyOrgMap.getScope());
+		return apiKeyOrgMapDTO;
 				
 	}
 

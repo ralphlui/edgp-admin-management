@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -590,8 +591,8 @@ public class UserController {
 			}
 
 			// find ordID
-			String orgID = apiKeyService.retrieveOrgIdByApiKey(apiKey);
-			if (orgID == null) {
+			ApiKeyOrgMapDTO apiKeyOrgMapDTO = apiKeyService.retrieveOrgIdByApiKey(apiKey);
+			if (apiKeyOrgMapDTO == null) {
 				message = "Invalid org ID while retreiving by api key.";
 				auditService.logAudit(auditDTO, 400, message, "");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(message));
@@ -601,7 +602,7 @@ public class UserController {
 			auditDTO.setUserId(apiKey);
 			auditDTO.setUsername(apiKey);
 
-			String accessToken = jwtService.generateAccessTokenForExternalUser(apiKey, orgID);
+			String accessToken = jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO);
 
 			if (accessToken != null) {
 
