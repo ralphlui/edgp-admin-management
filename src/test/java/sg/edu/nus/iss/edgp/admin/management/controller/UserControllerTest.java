@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.AuditDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.RoleDTO;
 import sg.edu.nus.iss.edgp.admin.management.dto.UnifiedUserDTO;
@@ -879,8 +880,17 @@ class UserControllerTest {
 
 		String apiKey = "ext-123";
 		String orgId = "ORG-9";
-		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
-		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenReturn("mocked.jwt.token");
+		String email = "test9@gmail.com";
+		String scope = "viw:policy";
+		
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+		
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
+		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenReturn("mocked.jwt.token");
 
 		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
 				.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -912,8 +922,17 @@ class UserControllerTest {
 
 		String apiKey = "ext-401";
 		String orgId = "ORG-1";
-		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
-		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenReturn(null);
+		String email = "test@gmail.com";
+		String scope = "viw:policy";
+
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
+		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenReturn(null);
 
 		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
 				.andExpect(status().isUnauthorized()).andExpect(jsonPath("$.success").value(false))
@@ -925,8 +944,17 @@ class UserControllerTest {
 
 		String apiKey = "ext-boom";
 		String orgId = "ORG-2";
-		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(orgId);
-		when(jwtService.generateAccessTokenForExternalUser(apiKey, orgId)).thenThrow(new RuntimeException("kaboom"));
+		String email = "test2@gmail.com";
+		String scope = "viw:policy";
+
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(orgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+
+		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
+		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenThrow(new RuntimeException("kaboom"));
 
 		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
 				.andExpect(status().isInternalServerError()).andExpect(jsonPath("$.success").value(false))

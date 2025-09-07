@@ -6,8 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import lombok.RequiredArgsConstructor;
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserServiceException;
 import sg.edu.nus.iss.edgp.admin.management.repository.ApiKeyOrgMapRepository;
+import sg.edu.nus.iss.edgp.admin.management.utility.DTOMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -17,15 +19,16 @@ public class ApiKeyService {
 
 	private final ApiKeyOrgMapRepository apiKeyOrgMapRepository;
 
-	public String retrieveOrgIdByApiKey(String apiKey) {
+	public ApiKeyOrgMapDTO retrieveOrgIdByApiKey(String apiKey) {
 		if (apiKey == null || apiKey.isBlank()) {
 			log.error("apiKey must not be blank");
 			throw new IllegalArgumentException("apiKey must not be blank");
 		}
 
-		return apiKeyOrgMapRepository.findOrgIdByApiKey(apiKey).orElseThrow(() -> {
-			log.error("Invalid API key: {}", apiKey);
-			return new UserServiceException("Invalid API key");
-		});
+		return apiKeyOrgMapRepository.findOrgIdByApiKey(apiKey).map(DTOMapper::toApiKeyOrgMapDTO) // mapping to DTO
+				.orElseThrow(() -> {
+					log.error("Invalid API key: {}", apiKey);
+					return new UserServiceException("Invalid API key");
+				});
 	}
 }

@@ -26,4 +26,11 @@ public class ApiKeyOrgMap {
 
     @Column(nullable = false)
     private String orgId;
+    
+    @Column(nullable = false)
+    private String email;
+    
+    @Column(nullable = false)
+    private String scope;
+	  
 }

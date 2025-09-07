@@ -3,6 +3,8 @@ package sg.edu.nus.iss.edgp.admin.management.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sg.edu.nus.iss.edgp.admin.management.dto.ApiKeyOrgMapDTO;
+import sg.edu.nus.iss.edgp.admin.management.entity.ApiKeyOrgMap;
 import sg.edu.nus.iss.edgp.admin.management.exception.UserServiceException;
 import sg.edu.nus.iss.edgp.admin.management.repository.ApiKeyOrgMapRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.impl.ApiKeyService;
@@ -57,11 +59,26 @@ class ApiKeyServiceTest {
 	void testRetrieveOrgId_validApiKey_returnsOrgId() {
 		String apiKey = "valid-key";
 		String expectedOrgId = "ORG-123";
-		when(apiKeyOrgMapRepository.findOrgIdByApiKey(apiKey)).thenReturn(Optional.of(expectedOrgId));
+		String email = "test2@gmail.com";
+		String scope = "viw:policy";
 
-		String result = apiKeyService.retrieveOrgIdByApiKey(apiKey);
+		ApiKeyOrgMapDTO apiKeyOrgMapDTO = new ApiKeyOrgMapDTO();
+		apiKeyOrgMapDTO.setApiKey(apiKey);
+		apiKeyOrgMapDTO.setOrgId(expectedOrgId);
+		apiKeyOrgMapDTO.setEmail(email);
+		apiKeyOrgMapDTO.setScope(scope);
+		
+		ApiKeyOrgMap apiKeyOrgMap = new ApiKeyOrgMap();
+		apiKeyOrgMap.setApiKey(apiKey);
+		apiKeyOrgMap.setOrgId(expectedOrgId);
+		apiKeyOrgMap.setEmail(email);
+		apiKeyOrgMap.setScope(scope);
+		
+		when(apiKeyOrgMapRepository.findOrgIdByApiKey(apiKey)).thenReturn(Optional.of(apiKeyOrgMap));
 
-		assertEquals(expectedOrgId, result);
+		ApiKeyOrgMapDTO dbApiKeyOrgMapDTO  = apiKeyService.retrieveOrgIdByApiKey(apiKey);
+
+		assertEquals(expectedOrgId, dbApiKeyOrgMapDTO.getOrgId());
 		verify(apiKeyOrgMapRepository, times(1)).findOrgIdByApiKey(apiKey);
 	}
 }
