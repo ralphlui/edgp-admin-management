@@ -892,7 +892,7 @@ class UserControllerTest {
 		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
 		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenReturn("mocked.jwt.token");
 
-		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+		mockMvc.perform(get("/api/admin/users/token").header("X-API-Key", apiKey))
 				.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
 				.andExpect(jsonPath("$.message").value("Access token generated successfully."))
 				.andExpect(jsonPath("$.data.token").value("mocked.jwt.token"));
@@ -901,7 +901,7 @@ class UserControllerTest {
 	@Test
 	void testGenerateAccessToken_external_blankKey_404() throws Exception {
 
-		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", ""))
+		mockMvc.perform(get("/api/admin/users/token").header("X-API-Key", ""))
 				.andExpect(status().isNotFound()).andExpect(jsonPath("$.success").value(false))
 				.andExpect(jsonPath("$.message").value("Invalid External API Key."));
 	}
@@ -912,7 +912,7 @@ class UserControllerTest {
 		String apiKey = "ext-no-org";
 		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(null);
 
-		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+		mockMvc.perform(get("/api/admin/users/token").header("X-API-Key", apiKey))
 				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false))
 				.andExpect(jsonPath("$.message").value("Invalid org ID while retreiving by api key."));
 	}
@@ -934,7 +934,7 @@ class UserControllerTest {
 		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
 		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenReturn(null);
 
-		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+		mockMvc.perform(get("/api/admin/users/token").header("X-API-Key", apiKey))
 				.andExpect(status().isUnauthorized()).andExpect(jsonPath("$.success").value(false))
 				.andExpect(jsonPath("$.message").value("Failed to generate token."));
 	}
@@ -956,7 +956,7 @@ class UserControllerTest {
 		when(apiKeyService.retrieveOrgIdByApiKey(apiKey)).thenReturn(apiKeyOrgMapDTO);
 		when(jwtService.generateAccessTokenForExternalUser(apiKeyOrgMapDTO)).thenThrow(new RuntimeException("kaboom"));
 
-		mockMvc.perform(get("/api/admin/users/externalAccessToken").header("X-API-Key", apiKey))
+		mockMvc.perform(get("/api/admin/users/token").header("X-API-Key", apiKey))
 				.andExpect(status().isInternalServerError()).andExpect(jsonPath("$.success").value(false))
 				.andExpect(jsonPath("$.message")
 						.value(org.hamcrest.Matchers.containsString("Requesting new access token is failed due to")));
