@@ -44,17 +44,18 @@ public class OTPRepository {
 		}
 	}
 
-	public void createTable(String tableName) {
+	public void createTable(String tableName, String pkKey) {
 		CreateTableRequest request = CreateTableRequest.builder().tableName(tableName)
-				.keySchema(KeySchemaElement.builder().attributeName("id").keyType(KeyType.HASH).build())
+				.keySchema(KeySchemaElement.builder().attributeName(pkKey).keyType(KeyType.HASH).build())
 				.attributeDefinitions(
-						AttributeDefinition.builder().attributeName("id").attributeType(ScalarAttributeType.S).build())
+						AttributeDefinition.builder().attributeName(pkKey).attributeType(ScalarAttributeType.S).build())
 				.billingMode(BillingMode.PAY_PER_REQUEST).build();
 
 		dynamoDbClient.createTable(request);
 		// Wait until table is ACTIVE
 		waitForTableToBecomeActive(tableName);
 	}
+
 
 	private void waitForTableToBecomeActive(String tableName) {
 		while (true) {
@@ -78,7 +79,7 @@ public class OTPRepository {
 
 		// 1) Ensure tables exist, then save
 		if (!this.tableExists(tableName.trim())) {
-			this.createTable(tableName.trim());
+			this.createTable(tableName.trim(),"email");
 		}
 
 		PutItemRequest req = PutItemRequest.builder().tableName(tableName)
