@@ -245,7 +245,7 @@ public class JWTService {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("apiKey", apiKeyOrgMapDTO.getApiKey());
 		claims.put("orgId", apiKeyOrgMapDTO.getOrgId());
-		claims.put("scope", apiKeyOrgMapDTO.getScope());
+		claims.put("scope", apiKeyOrgMapDTO.getScope().replace(",", " "));
 		claims.put("userEmail", apiKeyOrgMapDTO.getEmail());
 
 		return Jwts.builder().claims().add(claims).subject(apiKeyOrgMapDTO.getApiKey()).issuedAt(new Date(System.currentTimeMillis()))

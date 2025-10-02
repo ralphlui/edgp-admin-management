@@ -566,13 +566,13 @@ public class UserController {
 	}
 	
 	
-	@GetMapping(value = "/externalAccessToken", produces = "application/json")
+	@GetMapping(value = "/token", produces = "application/json")
 	public ResponseEntity<APIResponse<JWTDTO>> generateAccessTokenForExternalUser(
 			@RequestHeader("X-API-Key") String apiKey) {
 
 		String message = "";
 		String activityType = "Authentication-AccessToken-ForExternalUser";
-		String endpoint = API_ENDPOINT + "/externalAccessToken";
+		String endpoint = API_ENDPOINT + "/token";
 		HTTPVerb httpMethod = HTTPVerb.GET;
 		message = "Requesting new access token is failed due to ";
 
