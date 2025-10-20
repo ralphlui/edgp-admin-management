@@ -195,5 +195,233 @@ class UserValidationStrategyTest {
         assertFalse(result.isValid());
         assertEquals("Organization is not valid.", result.getMessage());
     }
+    
+ // --- helpers ---
+    private RoleDTO mkRoleDTO(String id, String name) {
+        RoleDTO r = new RoleDTO();
+        r.setRoleId(id);
+        r.setRoleName(name);
+        return r;
+    }
+
+    private User mkUser(String id, String email, String name, boolean active, boolean verified) {
+        User u = new User();
+        u.setUserId(id);
+        u.setEmail(email);
+        u.setUsername(name);
+        u.setActive(active);
+        u.setVerified(verified);
+        return u;
+    }
+
+    // ---------------- validateCreation ----------------
+
+    @Test
+    void validateCreation_emailEmpty_returnsBadRequest() {
+        UserRequest req = new UserRequest();
+        req.setEmail("");            // ← empty
+        req.setUsername("who");
+        req.setPassword("Password@1");
+        req.setRole("OrgAdmin");
+        req.setOrganizationId("ORG1");
+
+        ValidationResult res = userValidator.validateCreation(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Email cannot be empty.", res.getMessage());
+    }
+
+    @Test
+    void validateCreation_roleEmpty_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        req.setRole(""); // empty
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(passwordValidatorService.validatePassword(req.getPassword())).thenReturn("Valid");
+
+        ValidationResult res = userValidator.validateCreation(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Role cannot be empty.", res.getMessage());
+    }
+
+    @Test
+    void validateCreation_invalidRole_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(passwordValidatorService.validatePassword(req.getPassword())).thenReturn("Valid");
+        when(roleService.findByRoleName(VALID_ROLE)).thenReturn(null); // invalid role
+
+        ValidationResult res = userValidator.validateCreation(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Invalid role: " + VALID_ROLE, res.getMessage());
+    }
+
+    // ---------------- validateUpdating ----------------
+    @Test
+    void validateUpdating_roleEmpty_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        req.setRole("");
+
+        User existing = mkUser(req.getUserId(), req.getEmail(), "tester", true, true);
+        when(userService.findByUserId(req.getUserId())).thenReturn(existing);
+
+        
+        when(passwordValidatorService.validatePassword(req.getPassword())).thenReturn("Valid");
+
+        ValidationResult res = userValidator.validateUpdating(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Role cannot be empty.", res.getMessage());
+    }
+
+
+    @Test
+    void validateUpdating_invalidRole_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+
+        User existing = mkUser(req.getUserId(), req.getEmail(), "tester", true, true);
+        when(userService.findByUserId(req.getUserId())).thenReturn(existing);
+        when(passwordValidatorService.validatePassword(req.getPassword())).thenReturn("Valid");
+        when(roleService.findByRoleName(req.getRole())).thenReturn(mkRoleDTO(null, req.getRole())); // no id
+
+        ValidationResult res = userValidator.validateUpdating(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Invalid role: " + req.getRole(), res.getMessage());
+    }
+
+    // ------ validateObjectByUserId (user + password paths) ------
+
+    @Test
+    void validateObjectByUserId_userInactive_returnsForbidden() {
+        UserRequest req = createValidUserRequest();
+        User inactive = mkUser(req.getUserId(), req.getEmail(), "x", false, true);
+        when(userService.findByUserId(req.getUserId())).thenReturn(inactive);
+
+        ValidationResult res = userValidator.validateObjectByUserId(req, true);
+        assertFalse(res.isValid());
+        assertEquals("User account is deleted.", res.getMessage());
+    }
+
+    @Test
+    void validateObjectByUserId_userUnverified_returnsUnauthorized() {
+        UserRequest req = createValidUserRequest();
+        User unverified = mkUser(req.getUserId(), req.getEmail(), "x", true, false);
+        when(userService.findByUserId(req.getUserId())).thenReturn(unverified);
+
+        ValidationResult res = userValidator.validateObjectByUserId(req, true);
+        assertFalse(res.isValid());
+        assertEquals("Please verify the account first.", res.getMessage());
+    }
+
+    @Test
+    void validateObjectByUserId_passwordInvalid_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        User ok = mkUser(req.getUserId(), req.getEmail(), "x", true, true);
+        when(userService.findByUserId(req.getUserId())).thenReturn(ok);
+        when(passwordValidatorService.validatePassword(req.getPassword())).thenReturn("Too weak");
+
+        ValidationResult res = userValidator.validateObjectByUserId(req, true);
+        assertFalse(res.isValid());
+        assertEquals("Too weak", res.getMessage());
+    }
+
+    @Test
+    void validateObjectByUserId_noPasswordValidation_allowedAndValid() {
+        UserRequest req = createValidUserRequest();
+        User ok = mkUser(req.getUserId(), req.getEmail(), "x", true, true);
+        when(userService.findByUserId(req.getUserId())).thenReturn(ok);
+
+        // requiresPasswordValidation=false → should skip passwordValidatorService
+        ValidationResult res = userValidator.validateObjectByUserId(req, false);
+        assertTrue(res.isValid());
+        assertNull(res.getMessage());
+    }
+
+    // --------------- validateObject(email) ---------------
+
+    @Test
+    void validateObject_emailUserNotFound_returnsNotFound() {
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+
+        ValidationResult res = userValidator.validateObject(VALID_EMAIL);
+        assertFalse(res.isValid());
+        assertEquals("User account not found.", res.getMessage());
+    }
+
+    // --------------- validateObject(UserRequest, header) ---------------
+
+    @Test
+    void validateObject_userReq_emailEmpty_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        req.setEmail("");
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Email cannot be empty.", res.getMessage());
+    }
+
+    @Test
+    void validateObject_userReq_emailExists_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        User exists = mkUser("EX1", req.getEmail(), "exists", true, true);
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(exists);
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals(VALID_EMAIL + " is existed.", res.getMessage());
+    }
+
+    @Test
+    void validateObject_userReq_roleEmpty_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        req.setRole("");
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Role cannot be empty.", res.getMessage());
+    }
+
+    @Test
+    void validateObject_userReq_invalidRole_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
+        when(roleService.findByRoleName(VALID_ROLE)).thenReturn(mkRoleDTO(null, VALID_ROLE)); // invalid id
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Invalid role: " + VALID_ROLE, res.getMessage());
+    }
+
+    @Test
+    void validateObject_userReq_orgEmpty_returnsBadRequest() {
+        UserRequest req = createValidUserRequest();
+        req.setOrganizationId(null);
+
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
+        when(roleService.findByRoleName(VALID_ROLE)).thenReturn(mkRoleDTO("1", VALID_ROLE));
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertFalse(res.isValid());
+        assertEquals("Organization cannot be empty.", res.getMessage());
+    }
+
+    @Test
+    void validateObject_userReq_success_validTrue() {
+        UserRequest req = createValidUserRequest();
+
+        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
+        when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
+        when(roleService.findByRoleName(VALID_ROLE)).thenReturn(mkRoleDTO("1", VALID_ROLE));
+        // org present + header present → JSONReader consulted and success=true
+        JSONObject orgResp = new JSONObject();
+        when(jsonReader.getOrganization(VALID_ORG_ID, VALID_HEADER)).thenReturn(orgResp);
+        when(jsonReader.getSuccessFromResponse(orgResp)).thenReturn(true);
+
+        ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
+        assertTrue(res.isValid());
+        assertNull(res.getMessage());
+    }
+
 }
 
