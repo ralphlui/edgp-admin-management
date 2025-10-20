@@ -1,85 +1,169 @@
 package sg.edu.nus.iss.edgp.admin.management.api.connector;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.util.EntityUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import sg.edu.nus.iss.edgp.admin.management.entity.UserInvitation;
 
-
+@ExtendWith(MockitoExtension.class)
 class NotificationAPICallTest {
-	
-	private NotificationAPICall notiAPICall;
 
-	@Mock
-	private HttpClient httpClient;
+    private MockedStatic<HttpClientBuilder> httpClientBuilderStatic;
 
-	@Mock
-	private HttpResponse<String> httpResponse;
+    private HttpClientBuilder mockBuilder() {
+        return mock(HttpClientBuilder.class, RETURNS_DEEP_STUBS);
+    }
 
-	@Mock
-	private HttpClient httpClientMock;
-	
-	@Mock
-	private HttpResponse<String> httpResponseMock;
-	
-	UserInvitation userInvitation;
+    private NotificationAPICall setupServiceWithUrl(String baseUrl) {
+        NotificationAPICall svc = new NotificationAPICall();
+       
+        ReflectionTestUtils.setField(svc, "notificationURL", baseUrl);
+        return svc;
+    }
 
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		
-		userInvitation = new UserInvitation();
-		userInvitation.setEmail("john@gmail.com");
-		userInvitation.setToken("token");
-		userInvitation.setOrganizationId("org1");
-		notiAPICall = new NotificationAPICall();
+    @AfterEach
+    void tearDown() {
+        if (httpClientBuilderStatic != null) {
+            httpClientBuilderStatic.close();
+            httpClientBuilderStatic = null;
+        }
+    }
 
-		try {
-			java.lang.reflect.Field field = NotificationAPICall.class.getDeclaredField("notificationURL");
-			field.setAccessible(true);
-			field.set(notiAPICall, "http://test-noti-url.com/");
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    @Test
+    void sendUserInviteEmail_success_sendsJsonWithTrimmedValues_andReturnsBody() throws Exception {
+       
+        String baseUrl = "https://notify.example.com";
+        NotificationAPICall svc = setupServiceWithUrl(baseUrl);
 
-	@Test
-	void testValidateActiveUser_ExceptionHandling() throws Exception {
-		when(httpClient.send(any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
-				.thenThrow(new RuntimeException("Connection error"));
+        
+        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
 
-		String result = notiAPICall.sendUserInviteEmail(userInvitation, "Bearer xyz");
+        httpClientBuilderStatic = mockStatic(HttpClientBuilder.class);
+        HttpClientBuilder builder = mockBuilder();
+        httpClientBuilderStatic.when(HttpClientBuilder::create).thenReturn(builder);
+        when(builder.setDefaultRequestConfig(any(RequestConfig.class))).thenReturn(builder);
+        when(builder.build()).thenReturn(httpClient);
 
-		assertEquals("", result);
-	}
+       
+        String body = "{\"sent\":true}";
+        HttpEntity entity = new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8));
+        when(response.getEntity()).thenReturn(entity);
+        when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
 
-	@Test
-	void testHttpClientSendReturnsExpectedResponse() throws Exception {
-		String expectedResponseBody = "{\"success\":\"true\"}";
+   
+        UserInvitation invite = mock(UserInvitation.class);
+        when(invite.getEmail()).thenReturn(" user@example.com ");  // with spaces
+        when(invite.getToken()).thenReturn("  abc123  ");          // with spaces
 
-		when(httpResponseMock.body()).thenReturn(expectedResponseBody);
+     
+        String result = svc.sendUserInviteEmail(invite, "Bearer xyz");
 
-		when(httpClientMock.send(any(HttpRequest.class), Mockito.<HttpResponse.BodyHandler<String>>any()))
-				.thenReturn(httpResponseMock);
+        
+        assertThat(result).isEqualTo(body);
 
-		HttpRequest request = HttpRequest.newBuilder().uri(new java.net.URI("http://example.com")).GET().build();
+        
+        ArgumentCaptor<HttpPost> captor = ArgumentCaptor.forClass(HttpPost.class);
+        verify(httpClient).execute(captor.capture());
+        HttpPost actual = captor.getValue();
 
-		HttpResponse<String> response = httpClientMock.send(request, HttpResponse.BodyHandlers.ofString());
-		String actualBody = response.body();
+       
+        assertThat(actual.getURI().toString())
+                .isEqualTo("https://notify.example.com/invitation-user");
 
-		assertEquals(expectedResponseBody, actualBody);
-	}
+      
+        assertThat(actual.getFirstHeader("Authorization").getValue()).isEqualTo("Bearer xyz");
+        assertThat(actual.getFirstHeader("Content-Type").getValue()).isEqualTo("application/json");
 
+      
+        String sentJson = EntityUtils.toString(actual.getEntity(), StandardCharsets.UTF_8);
+        assertThat(sentJson).contains("\"userEmail\": \"user@example.com\"");
+        assertThat(sentJson).contains("\"token\":\"abc123\"");
+        assertThat(sentJson).contains("\"userEmail\"");
+        assertThat(sentJson).contains("\"token\"");
+
+       
+        verify(response, times(1)).getEntity();
+        verify(response, times(1)).close();
+        verify(httpClient, times(1)).close();
+    }
+
+    @Test
+    void sendUserInviteEmail_executeThrows_returnsEmptyString() throws Exception {
+       
+        NotificationAPICall svc = setupServiceWithUrl("https://notify.example.com");
+
+        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+
+        httpClientBuilderStatic = mockStatic(HttpClientBuilder.class);
+        HttpClientBuilder builder = mockBuilder();
+        httpClientBuilderStatic.when(HttpClientBuilder::create).thenReturn(builder);
+        when(builder.setDefaultRequestConfig(any(RequestConfig.class))).thenReturn(builder);
+        when(builder.build()).thenReturn(httpClient);
+
+        when(httpClient.execute(any(HttpPost.class))).thenThrow(new IOException("boom"));
+
+       
+        UserInvitation invite = mock(UserInvitation.class);
+        when(invite.getEmail()).thenReturn("user@example.com");
+        when(invite.getToken()).thenReturn("abc123");
+
+       
+        String result = svc.sendUserInviteEmail(invite, "Bearer xyz");
+
+       
+        assertThat(result).isEmpty();
+        verify(httpClient, times(1)).close();
+    }
+
+    @Test
+    void sendUserInviteEmail_nullEntity_returnsEmptyString() throws Exception {
+       
+        NotificationAPICall svc = setupServiceWithUrl("https://notify.example.com");
+
+        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+
+        httpClientBuilderStatic = mockStatic(HttpClientBuilder.class);
+        HttpClientBuilder builder = mockBuilder();
+        httpClientBuilderStatic.when(HttpClientBuilder::create).thenReturn(builder);
+        when(builder.setDefaultRequestConfig(any(RequestConfig.class))).thenReturn(builder);
+        when(builder.build()).thenReturn(httpClient);
+
+        when(response.getEntity()).thenReturn(null);
+        when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
+
+        UserInvitation invite = mock(UserInvitation.class);
+        when(invite.getEmail()).thenReturn("user@example.com");
+        when(invite.getToken()).thenReturn("abc123");
+
+   
+        String result = svc.sendUserInviteEmail(invite, "Bearer xyz");
+
+        
+        assertThat(result).isEmpty();
+        verify(response, times(1)).getEntity();
+        verify(response, times(1)).close();
+        verify(httpClient, times(1)).close();
+    }
 }

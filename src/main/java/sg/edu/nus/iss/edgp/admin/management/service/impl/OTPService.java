@@ -8,22 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import sg.edu.nus.iss.edgp.admin.management.dto.OTPItemDTO;
-import sg.edu.nus.iss.edgp.admin.management.repository.OTPRepository;
+import sg.edu.nus.iss.edgp.admin.management.dynamo.OTPRepository;
 import sg.edu.nus.iss.edgp.admin.management.service.IOTPService;
 import sg.edu.nus.iss.edgp.admin.management.utility.GeneralUtility;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
-import software.amazon.awssdk.services.dynamodb.model.BillingMode;
-import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
-import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
-import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
-import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
-import software.amazon.awssdk.services.dynamodb.model.KeyType;
-import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 @Service
 @RequiredArgsConstructor
