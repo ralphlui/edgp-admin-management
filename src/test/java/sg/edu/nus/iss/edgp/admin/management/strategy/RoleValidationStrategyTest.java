@@ -106,5 +106,70 @@ class RoleValidationStrategyTest {
         assertTrue(result.isValid());
         assertNull(result.getMessage());
     }
+    
+    @Test
+    void validateCreation_duplicateRole_caseInsensitive_shouldReturnBadRequest() {
+        // role in request is "orgadmin" (different case)
+        Role dup = new Role("X", "orgadmin", "desc", true, LocalDateTime.now(), null, null, null);
+        // roleService returns existing with different case
+        RoleDTO existing = new RoleDTO();
+        existing.setRoleId("1");
+        existing.setRoleName("OrgAdmin");
+
+        when(roleService.findByRoleName("orgadmin")).thenReturn(existing);
+
+        ValidationResult result = roleValidationStrategy.validateCreation(dup, authorizationHeader);
+
+        assertFalse(result.isValid());
+        assertEquals("Role already exists.", result.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatus());
+    }
+
+    @Test
+    void validateCreation_uniqueRole_whenServiceReturnsEmptyDto_shouldBeValid() {
+        Role newRole = new Role("N", "BrandNew", "desc", true, LocalDateTime.now(), null, null, null);
+
+        // IMPORTANT: do NOT return null here (would NPE inside strategy). Return an empty DTO.
+        RoleDTO empty = new RoleDTO(); // roleId=null, roleName=null
+        when(roleService.findByRoleName("BrandNew")).thenReturn(empty);
+
+        ValidationResult result = roleValidationStrategy.validateCreation(newRole, authorizationHeader);
+
+        assertTrue(result.isValid());
+        assertNull(result.getMessage());
+    }
+
+    @Test
+    void validateUpdating_roleIdPresent_butNotFound_returnsBadRequest() {
+        Role upd = new Role();
+        upd.setRoleId("NOPE");
+        upd.setRoleName("SomeName");
+
+        when(roleService.findByRoleId("NOPE")).thenReturn(java.util.Optional.empty());
+
+        ValidationResult res = roleValidationStrategy.validateUpdating(upd, authorizationHeader);
+
+        assertFalse(res.isValid());
+        assertEquals("Bad Request: Role Id is invalid.", res.getMessage());
+        assertEquals(HttpStatus.BAD_REQUEST, res.getStatus());
+    }
+
+    @Test
+    void validateUpdating_roleIdPresent_andFound_andNameOk_returnsValidTrue() {
+        Role upd = new Role();
+        upd.setRoleId("OKID");
+        upd.setRoleName("GoodName");
+
+        when(roleService.findByRoleId("OKID")).thenReturn(java.util.Optional.of(
+                new Role("OKID", "Anything", "desc", true, LocalDateTime.now(), null, null, null)
+        ));
+
+        ValidationResult res = roleValidationStrategy.validateUpdating(upd, authorizationHeader);
+
+        assertTrue(res.isValid());
+        assertNull(res.getMessage());
+    }
+    
+
 
 }

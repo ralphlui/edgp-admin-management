@@ -1,4 +1,4 @@
-package sg.edu.nus.iss.edgp.admin.management.repository;
+package sg.edu.nus.iss.edgp.admin.management.dynamo;
 
 import java.util.Map;
 

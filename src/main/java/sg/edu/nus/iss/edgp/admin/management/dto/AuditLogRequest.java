@@ -1,12 +1,10 @@
 package sg.edu.nus.iss.edgp.admin.management.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 public class AuditLogRequest {
 
 	private String statusCode;
