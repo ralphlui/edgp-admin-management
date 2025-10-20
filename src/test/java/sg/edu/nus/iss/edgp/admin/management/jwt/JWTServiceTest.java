@@ -283,5 +283,162 @@ public class JWTServiceTest {
 		f.setAccessible(true);
 		f.set(target, value);
 	}
+	
+	// =====================  Helpers  =====================
+
+	private String mintValidAccessTokenFor(User u) throws Exception {
+	    // scopes
+	    when(permissionService.findScopesByRole(u.getRole().getRoleName()))
+	            .thenReturn(List.of("org:read", "user:read"));
+	    // treat as non-invited unless you want orgId claim
+	    when(userInvitationRepository.existsByEmail(u.getEmail())).thenReturn(false);
+
+	    // reuse your DTO mapper
+	    UserDTO dto = DTOMapper.toUserDTO(u);
+
+	    // pentest flag already set to "true" in @BeforeEach (15/30 min style);
+	    // demo flag default is null → treated as false.
+	    return jwtService.generateToken(dto);
+	}
+
+	private String bearer(String rawToken) {
+	    return "Bearer " + rawToken;
+	}
+
+	// =====================  validateToken  =====================
+
+	@Test
+	void validateToken_true_whenEmailMatchesAndNotExpired() throws Exception {
+	    String token = mintValidAccessTokenFor(user);
+
+	    // Spring Security UserDetails with SAME username (email)
+	    UserDetails ud = org.springframework.security.core.userdetails.User
+	            .withUsername(user.getEmail()).password("x").roles("USER").build();
+
+	    assertTrue(jwtService.validateToken(token, ud));
+	}
+
+	@Test
+	void validateToken_false_whenUsernameMismatch() throws Exception {
+	    String token = mintValidAccessTokenFor(user);
+
+	    UserDetails ud = org.springframework.security.core.userdetails.User
+	            .withUsername("someoneelse@example.com").password("x").roles("USER").build();
+
+	    assertFalse(jwtService.validateToken(token, ud));
+	}
+
+	@Test
+	void validateToken_throwsExpiredJwtException_whenExpired() throws Exception {
+	    // Build an expired token signed with our private key
+	    Date now = new Date();
+	    String expired = Jwts.builder()
+	            .subject("u-1")
+	            .claim(JWTService.USER_EMAIL, "who@example.com")
+	            .issuedAt(new Date(now.getTime() - 60_000))
+	            .expiration(new Date(now.getTime() - 1_000)) // already expired
+	            .signWith(keyPair.getPrivate())
+	            .compact();
+
+	    UserDetails ud = org.springframework.security.core.userdetails.User
+	            .withUsername("who@example.com").password("x").roles("USER").build();
+
+	    assertThrows(io.jsonwebtoken.ExpiredJwtException.class,
+	            () -> jwtService.validateToken(expired, ud));
+	}
+
+	// =====================  retrieve helpers  =====================
+
+	@Test
+	void retrieveUserID_fromAuthorizationHeader_returnsSubject_evenIfExpired() throws Exception {
+	    // expired token with subject "expiredUser"
+	    Date now = new Date();
+	    String expired = Jwts.builder()
+	            .subject("expiredUser")
+	            .issuedAt(new Date(now.getTime() - 3_600_000))
+	            .expiration(new Date(now.getTime() - 60_000))
+	            .signWith(keyPair.getPrivate())
+	            .compact();
+
+	    String id = jwtService.retrieveUserID(bearer(expired));
+	    assertEquals("expiredUser", id);
+	}
+
+	@Test
+	void retrieveUserName_returnsClaimOrFallback() throws Exception {
+	    String token = Jwts.builder()
+	            .subject("id-1")
+	            .claim(JWTService.CLAIM_USERNAME, "Alice")
+	            .issuedAt(new Date())
+	            .expiration(new Date(System.currentTimeMillis() + 300_000))
+	            .signWith(keyPair.getPrivate())
+	            .compact();
+
+	    assertEquals("Alice", jwtService.retrieveUserName(token));
+	}
+
+	@Test
+	void retrieveUserEmail_fromAuthorizationHeader_returnsEmail_evenIfExpired() throws Exception {
+	    Date now = new Date();
+	    String expired = Jwts.builder()
+	            .subject("id-2")
+	            .claim(JWTService.USER_EMAIL, "mail@example.com")
+	            .issuedAt(new Date(now.getTime() - 3_600_000))
+	            .expiration(new Date(now.getTime() - 60_000))
+	            .signWith(keyPair.getPrivate())
+	            .compact();
+
+	    String email = jwtService.retrieveUserEmail(bearer(expired));
+	    assertEquals("mail@example.com", email);
+	}
+
+	@Test
+	void getUserIdByAuthHeader_returnsSubject() throws Exception {
+	    String token = Jwts.builder()
+	            .subject("abc-123")
+	            .issuedAt(new Date())
+	            .expiration(new Date(System.currentTimeMillis() + 300_000))
+	            .signWith(keyPair.getPrivate())
+	            .compact();
+
+	    String out = jwtService.getUserIdByAuthHeader(bearer(token));
+	    assertEquals("abc-123", out);
+	}
+
+	// =====================  hashWithSHA256  =====================
+
+	@Test
+	void hashWithSHA256_isDeterministicAndBase64() {
+	    String input = "refresh-token-xyz";
+	    String h1 = jwtService.hashWithSHA256(input);
+	    String h2 = jwtService.hashWithSHA256(input);
+
+	    assertNotNull(h1);
+	    assertEquals(h1, h2);  // deterministic
+
+	    // And decodes as base64 without error:
+	    assertDoesNotThrow(() -> Base64.getDecoder().decode(h1));
+	}
+
+	// =====================  getUserDetail  =====================
+
+	@Test
+	void getUserDetail_buildsSpringUserFromUserService() throws Exception {
+	    // Token with subject = userId
+	    String token = mintValidAccessTokenFor(user);
+
+	    // Mock ApplicationContext -> UserService bean
+	    UserService userServiceMock = mock(UserService.class);
+	    when(context.getBean(UserService.class)).thenReturn(userServiceMock);
+
+	    // findActiveUserByID returns our 'user'
+	    when(userServiceMock.findActiveUserByID(user.getUserId())).thenReturn(user);
+
+	    UserDetails details = jwtService.getUserDetail(token);
+
+	    assertEquals(user.getEmail(), details.getUsername());
+	    assertTrue(details.getAuthorities().stream().findFirst().isPresent());
+	}
+
 
 }
