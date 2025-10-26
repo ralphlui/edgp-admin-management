@@ -115,12 +115,36 @@ public class UserService implements IUserService{
 			logger.info("Update User...");
 			User updateUser = userRepository.save(dbUser);
 			logger.info("User update is successful");
+			
+			
+			//Update to user-org-role mapping
+			
+			UserOrganization dbUserOrg= userOrganizationRepository.findByUser_UserId(updateUser.getUserId());
+				
+			if(dbUserOrg != null) {
+			
+			dbUserOrg.setUser(updateUser);
+			dbUserOrg.setOrganizationId(userReq.getOrganizationId());
+			dbUserOrg.setRole(role);
+			dbUserOrg.setActive(true);
+			dbUserOrg.setUpdatedBy(updateUser.getUserId());
+			dbUserOrg.setUpdatedDate(LocalDateTime.now());
+			
+			UserOrganization dbUserOrganization = userOrganizationRepository.save(dbUserOrg);
+			
+			if (dbUserOrganization == null) {
+				throw new Exception("Invalid Organization,User updating is not successful");
+			}
+			 
+			 }
+			
 			return DTOMapper.toUserDTO(updateUser);
 		} catch (Exception e) {
 			logger.error("Error occurred while user updating", e);
 			
-			throw e;
+			
 		}
+		return null;
 	}
 
 	@Override

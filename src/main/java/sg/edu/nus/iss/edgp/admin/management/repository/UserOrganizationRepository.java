@@ -1,6 +1,5 @@
 package sg.edu.nus.iss.edgp.admin.management.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +12,7 @@ public interface UserOrganizationRepository extends JpaRepository<UserOrganizati
 
 	UserOrganization findByUser_UserIdAndRole_RoleId(String userId,String roleId);
 
-	Optional<UserOrganization> findByUser_UserIdAndOrganizationId(String userId, String orgId);
+	UserOrganization findByUser_UserId(String userId);
 
 
 }

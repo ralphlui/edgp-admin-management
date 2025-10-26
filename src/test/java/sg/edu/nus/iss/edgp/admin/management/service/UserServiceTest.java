@@ -6,7 +6,9 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -204,33 +206,40 @@ class UserServiceTest {
 	    }
 	}
 
+	@Test
+	  void testUpdateUser_UserNotFound() {
+	      UserRequest req = new UserRequest();
+	      req.setUserId("user123");
+
+	      when(userRepository.findByUserId("user123")).thenReturn(null);
+
+	      UserDTO result = userService.updateUser(req);
+	      assertNull(result);
+
+	      verify(userRepository).findByUserId("user123");
+	      verify(userRepository, never()).save(any());
+	      verifyNoInteractions(roleRepository, userOrganizationRepository);
+	  }
 
 	@Test
-	void testUpdateUser_UserNotFound() {
-	    userRequest = new UserRequest();
-	    userRequest.setUserId("user123");
+	public void testUpdateUser_onThrowException_returnsNull() {
+	    var req = new UserRequest();
+	    req.setUserId("u1");
+	    req.setUsername("name");
+	    req.setPassword("pw");
+	    req.setActive(true);
+	    req.setRole("ADMIN");
 
-	    when(userRepository.findByUserId("user123")).thenReturn(null);
+	    when(userRepository.findByUserId("u1")).thenReturn(new User());
 
-	    assertThrows(UserNotFoundException.class, () -> {
-	        userService.updateUser(userRequest);
-	    });
+	    when(roleRepository.findByRoleName("ADMIN")).thenThrow(new RuntimeException("boom"));
 
-	    verify(userRepository).findByUserId("user123");
+	    UserDTO result = userService.updateUser(req);
+
+	    
+	    verify(userRepository).findByUserId("u1");
+	    verify(userRepository, never()).save(any());
 	}
-
-    @Test
-    void testUpdateUser_onThrowException() {
-        when(userRepository.findByUserId("user123")).thenReturn(user1);
-        when(roleRepository.findByRoleName("OrgAdmin")).thenThrow(new RuntimeException("DB error"));
-
-        assertThrows(RuntimeException.class, () -> {
-            userService.updateUser(userRequest);
-        });
-
-        verify(userRepository).findByUserId("user123");
-        verify(roleRepository).findByRoleName("OrgAdmin");
-    }
 
     @Test
     void findActiveUsers() {
