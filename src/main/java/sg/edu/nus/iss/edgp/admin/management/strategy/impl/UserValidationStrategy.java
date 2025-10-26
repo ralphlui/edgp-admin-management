@@ -289,7 +289,7 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			validationResult.setUserId(INVALID_USER_ID);
 			validationResult.setUserName(userName);
 			return validationResult;
-		}else {
+		}/*else {
 			if(header != null && !header.equals("")) {
 			JSONObject jsonResponse  = jsonReader.getOrganization(userReq.getOrganizationId(), header);
 			Boolean getSuccessFromResponse =jsonReader.getSuccessFromResponse(jsonResponse);
@@ -305,7 +305,7 @@ public class UserValidationStrategy implements IAPIHelperValidationStrategy <Use
 			}
 			}
 			
-		}
+		}*/
 
 		validationResult.setValid(true);
 		return validationResult;

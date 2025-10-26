@@ -178,23 +178,7 @@ class UserValidationStrategyTest {
         assertTrue(result.getMessage().contains("Invitation already sent"));
     }
 
-    @Test
-    void testValidateObject_InvalidOrganization() {
-    	 role = new Role("1", "OrgAdmin", "Organization Admin", true, LocalDateTime.now(), null, null, null);
-         roleDTO =  DTOMapper.toRoleDTO(role);
-        UserRequest req = createValidUserRequest();
 
-        when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
-        when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
-        when(roleService.findByRoleName(req.getRole())).thenReturn(roleDTO);
-        when(jsonReader.getOrganization(req.getOrganizationId(), VALID_HEADER)).thenReturn(new JSONObject());
-        when(jsonReader.getSuccessFromResponse(any(JSONObject.class))).thenReturn(false);
-
-        ValidationResult result = userValidator.validateObject(req, VALID_HEADER);
-
-        assertFalse(result.isValid());
-        assertEquals("Organization is not valid.", result.getMessage());
-    }
     
  // --- helpers ---
     private RoleDTO mkRoleDTO(String id, String name) {
@@ -413,11 +397,7 @@ class UserValidationStrategyTest {
         when(userService.findByEmail(VALID_EMAIL)).thenReturn(null);
         when(userInvitationService.existsByEmailIsUsed(VALID_EMAIL)).thenReturn(false);
         when(roleService.findByRoleName(VALID_ROLE)).thenReturn(mkRoleDTO("1", VALID_ROLE));
-        // org present + header present → JSONReader consulted and success=true
-        JSONObject orgResp = new JSONObject();
-        when(jsonReader.getOrganization(VALID_ORG_ID, VALID_HEADER)).thenReturn(orgResp);
-        when(jsonReader.getSuccessFromResponse(orgResp)).thenReturn(true);
-
+      
         ValidationResult res = userValidator.validateObject(req, VALID_HEADER);
         assertTrue(res.isValid());
         assertNull(res.getMessage());
